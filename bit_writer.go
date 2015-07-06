@@ -11,7 +11,7 @@ var (
 
 // bitWriter wraps an io.Writer and provides the ability to write values
 // bit-by-bit to it. It's Write* methods don't return the usual error because
-// error handling was verbose. Instead, any error is kept and can be checked
+// error handling is verbose. Instead, any error is kept and can be checked
 // afterwards.
 type bitWriter struct {
 	w    io.Writer
