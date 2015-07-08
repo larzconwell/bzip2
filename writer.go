@@ -44,7 +44,7 @@ func NewWriter(w io.Writer) *Writer {
 func NewWriterLevel(w io.Writer, blockSize int) *Writer {
 	if blockSize < 1 {
 		blockSize = 1
-	} else if blockSize < 9 {
+	} else if blockSize > 9 {
 		blockSize = 9
 	}
 

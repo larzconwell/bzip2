@@ -60,7 +60,10 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	bitsWrote := 81
 
 	// Initial RLE step.
-	encodeRLE(b.buf.Bytes())
+	data := encodeRLE(b.buf.Bytes())
+	// BWT step.
+	ptr := bwTransform(data, data)
+	bw.WriteBits(24, uint64(ptr))
 
 	return bitsWrote, bw.Err()
 }
