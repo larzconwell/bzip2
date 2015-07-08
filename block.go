@@ -59,5 +59,8 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	bw.WriteBits(1, 0)
 	bitsWrote := 81
 
+	// Initial RLE step.
+	encodeRLE(b.buf.Bytes())
+
 	return bitsWrote, bw.Err()
 }
