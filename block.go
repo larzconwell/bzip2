@@ -41,11 +41,14 @@ func (b *block) Write(p []byte) (int, error) {
 		exceedsSize = true
 		p = p[:b.size-b.buf.Len()]
 	}
-	b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
 
 	n, err := b.buf.Write(p)
-	if err == nil && exceedsSize {
-		err = errBlockSizeReached
+	if err == nil {
+		b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
+
+		if exceedsSize || b.buf.Len() == b.size {
+			err = errBlockSizeReached
+		}
 	}
 
 	return n, err

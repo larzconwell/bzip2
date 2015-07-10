@@ -89,9 +89,11 @@ func (b *Writer) write(p []byte) (int, error) {
 			return n, err
 		}
 
-		var nn int
-		nn, err = b.write(p[n:])
-		n += nn
+		if n != len(p) {
+			var nn int
+			nn, err = b.write(p[n:])
+			n += nn
+		}
 	}
 
 	return n, err
@@ -113,7 +115,7 @@ func (b *Writer) writeBlock() error {
 
 // Flush flushes any pending compressed data to the underlying writer.
 func (b *Writer) Flush() error {
-	if b.closed || b.block.Len() == 0 {
+	if b.block.Len() == 0 {
 		return nil
 	}
 
