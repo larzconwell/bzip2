@@ -45,6 +45,8 @@ func bwTransform(dst, src []byte) int {
 	ptr := -1
 	i := 0
 
+	// Get the ptr to the original src input, and get the bytes from the
+	// last column for the dst.
 	for _, r := range rs.rotates {
 		if r < srclen {
 			if len(src[r:]) == srclen*2 {

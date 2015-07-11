@@ -35,14 +35,18 @@ func (b *block) Len() int {
 // only the bytes that can fit will be written and errBlockSizeReached is
 // returned.
 func (b *block) Write(p []byte) (int, error) {
-	// Get the bytes we can write in this block.
 	exceedsSize := false
-	if b.buf.Len()+len(p) > b.size {
+
+	// Do the initial RLE step on demand since RLE can actually make p grow.
+	// This ensures that the block size doesn't end up more than b.size
+	// after RLE.
+	data := rlEncode(p)
+	if b.buf.Len()+len(data) > b.size {
 		exceedsSize = true
-		p = p[:b.size-b.buf.Len()]
+		data = data[:b.size-b.buf.Len()]
 	}
 
-	n, err := b.buf.Write(p)
+	n, err := b.buf.Write(data)
 	if err == nil {
 		b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
 
@@ -51,7 +55,8 @@ func (b *block) Write(p []byte) (int, error) {
 		}
 	}
 
-	return n, err
+	p = p[:rlIndexOf(data, n-1)+1]
+	return len(p), err
 }
 
 // WriteBlock compresses the contented buffered and writes a block to the bit
@@ -62,9 +67,8 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	bw.WriteBits(1, 0)
 	bitsWrote := 81
 
-	// Initial RLE step.
-	data := encodeRLE(b.buf.Bytes())
 	// BWT step.
+	data := b.buf.Bytes()
 	ptr := bwTransform(data, data)
 	bw.WriteBits(24, uint64(ptr))
 
