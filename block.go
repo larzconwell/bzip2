@@ -69,7 +69,8 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 
 	// BWT step.
 	data := b.buf.Bytes()
-	ptr := bwTransform(data, data)
+	bwt := make([]byte, len(data))
+	ptr := bwTransform(bwt, data)
 	bw.WriteBits(24, uint64(ptr))
 
 	return bitsWrote, bw.Err()
