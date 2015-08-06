@@ -47,6 +47,8 @@ func (b *block) Write(p []byte) (int, error) {
 	}
 
 	n, err := b.buf.Write(data)
+	p = p[:rlIndexOf(data, n-1)+1]
+
 	if err == nil {
 		b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
 
@@ -55,7 +57,6 @@ func (b *block) Write(p []byte) (int, error) {
 		}
 	}
 
-	p = p[:rlIndexOf(data, n-1)+1]
 	return len(p), err
 }
 
