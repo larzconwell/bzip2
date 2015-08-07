@@ -48,7 +48,6 @@ func (b *block) Write(p []byte) (int, error) {
 
 	n, err := b.buf.Write(data)
 	p = p[:rlIndexOf(data, n-1)+1]
-
 	if err == nil {
 		b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
 
@@ -63,16 +62,51 @@ func (b *block) Write(p []byte) (int, error) {
 // WriteBlock compresses the contented buffered and writes a block to the bit
 // writer given. The number of bits written is returned.
 func (b *block) WriteBlock(bw *bitWriter) (int, error) {
+	data := b.buf.Bytes()
+
+	// Get the symbols used in data.
+	symbols := make([]int, 256)
+	for _, b := range data {
+		symbols[int(b)] = 1
+	}
+
+	// Write the block header.
 	bw.WriteBits(48, blockMagic)
 	bw.WriteBits(32, uint64(b.crc))
 	bw.WriteBits(1, 0)
 	bitsWrote := 81
 
 	// BWT step.
-	data := b.buf.Bytes()
 	bwt := make([]byte, len(data))
 	ptr := bwTransform(bwt, data)
 	bw.WriteBits(24, uint64(ptr))
+	bitsWrote += 24
+
+	// Write the symbol bitmap.
+	symbolRangeUsedBitmap := 0
+	symbolRanges := make([]int, 16)
+	for i, symRange := range symbolRanges {
+		// Toggle the bits for the 16 symbols in the range.
+		for j := 0; j < 16; j++ {
+			symRange = (symRange << 1) + symbols[16*i+j]
+		}
+		symbolRanges[i] = symRange
+
+		// Toggle the bit for the range in the bitmap.
+		rangePresent := 0
+		if symRange > 0 {
+			rangePresent = 1
+		}
+		symbolRangeUsedBitmap = (symbolRangeUsedBitmap << 1) + rangePresent
+	}
+	bw.WriteBits(16, uint64(symbolRangeUsedBitmap))
+	bitsWrote += 16
+	for _, symRange := range symbolRanges {
+		if symRange > 0 {
+			bw.WriteBits(16, uint64(symRange))
+			bitsWrote += 16
+		}
+	}
 
 	return bitsWrote, bw.Err()
 }
