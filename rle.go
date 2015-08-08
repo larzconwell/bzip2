@@ -1,32 +1,32 @@
 package bzip2
 
-// rlEncode encodes data using the RLE format.
-func rlEncode(data []byte) []byte {
+// rlEncode encodes src using the RLE format.
+func rlEncode(src []byte) []byte {
 	var lastb byte
 	repeats := 0
-	out := make([]byte, 0, len(data))
+	dst := make([]byte, 0, len(src))
 
 	// finishRun writes the repeats for the last byte.
 	var finishRun func()
 	finishRun = func() {
 		if repeats < 4 {
 			for i := 0; i < repeats; i++ {
-				out = append(out, lastb)
+				dst = append(dst, lastb)
 			}
 		} else if repeats <= 259 {
 			list := []byte{lastb, lastb, lastb, lastb, byte(repeats - 4)}
-			out = append(out, list...)
+			dst = append(dst, list...)
 		} else {
 			list := []byte{lastb, lastb, lastb, lastb, byte(255)}
-			out = append(out, list...)
+			dst = append(dst, list...)
 
 			repeats -= 259
 			finishRun()
 		}
 	}
 
-	// Gather the repeats for the bytes in data.
-	for i, b := range data {
+	// Gather the repeats for the bytes in src.
+	for i, b := range src {
 		if i == 0 || b != lastb {
 			if i > 0 {
 				finishRun()
@@ -41,7 +41,7 @@ func rlEncode(data []byte) []byte {
 	}
 	finishRun()
 
-	return out
+	return dst
 }
 
 // rlIndexOf gets the index of the decoded form of data at index n.

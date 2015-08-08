@@ -6,14 +6,14 @@ import (
 )
 
 func TestRLEncode(t *testing.T) {
-	data := []byte("aeecccbhzzzzkkkkkkkkvvvvvrvv")
+	src := []byte("aeecccbhzzzzkkkkkkkkvvvvvrvv")
 	expected := []byte("aeecccbhzzzz\x00kkkk\x04vvvv\x01rvv")
 
-	out := rlEncode(data)
-	if len(out) != len(expected) {
+	dst := rlEncode(src)
+	if len(dst) != len(expected) {
 		t.Error("RLE length doesn't match expected length")
 	}
-	for i, d := range out {
+	for i, d := range dst {
 		if d != expected[i] {
 			t.Error("Byte value " + string(d) + " isn't the expected value " + string(expected[i]))
 		}
@@ -22,29 +22,29 @@ func TestRLEncode(t *testing.T) {
 
 func TestRLEncodeLong(t *testing.T) {
 	expected := []byte("bbbb\xFFb")
-	data := make([]byte, 260)
-	for i := range data {
-		data[i] = 'b'
+	src := make([]byte, 260)
+	for i := range src {
+		src[i] = 'b'
 	}
 
-	out := rlEncode(data)
-	if len(out) != len(expected) {
+	dst := rlEncode(src)
+	if len(dst) != len(expected) {
 		t.Error("RLE length doesn't match expected length")
 	}
-	for i, d := range out {
-		if d != expected[i] {
-			t.Error("Byte value " + string(d) + " isn't the expected value " + string(expected[i]))
+	for i, actual := range dst {
+		if actual != expected[i] {
+			t.Error("Byte value " + string(actual) + " isn't the expected value " + string(expected[i]))
 		}
 	}
 }
 
 func TestRLIndexOf(t *testing.T) {
-	data := []byte("sk\x02\x02\x02\x02\x02\x02\x02")
+	src := []byte("sk\x02\x02\x02\x02\x02\x02\x02")
 
-	out := rlEncode(data)
-	idx := rlIndexOf(out, len(out)-1)
-	if idx != len(data)-1 {
-		t.Error("Index value is incorrect. Got " + strconv.Itoa(idx) + " wanted " + strconv.Itoa(len(data)-1))
+	dst := rlEncode(src)
+	idx := rlIndexOf(dst, len(dst)-1)
+	if idx != len(src)-1 {
+		t.Error("Index value is incorrect. Got " + strconv.Itoa(idx) + " wanted " + strconv.Itoa(len(src)-1))
 	}
 }
 

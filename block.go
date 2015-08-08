@@ -40,14 +40,14 @@ func (b *block) Write(p []byte) (int, error) {
 	// Do the initial RLE step on demand since RLE can actually make p grow.
 	// This ensures that the block size doesn't end up more than b.size
 	// after RLE.
-	data := rlEncode(p)
-	if b.buf.Len()+len(data) > b.size {
+	encoded := rlEncode(p)
+	if b.buf.Len()+len(encoded) > b.size {
 		exceedsSize = true
-		data = data[:b.size-b.buf.Len()]
+		encoded = encoded[:b.size-b.buf.Len()]
 	}
 
-	n, err := b.buf.Write(data)
-	p = p[:rlIndexOf(data, n-1)+1]
+	n, err := b.buf.Write(encoded)
+	p = p[:rlIndexOf(encoded, n-1)+1]
 	if err == nil {
 		b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
 
@@ -106,6 +106,7 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 		}
 		symbolRangeUsedBitmap = (symbolRangeUsedBitmap << 1) + rangePresent
 	}
+
 	bw.WriteBits(16, uint64(symbolRangeUsedBitmap))
 	bitsWrote += 16
 	for _, symRange := range symbolRanges {

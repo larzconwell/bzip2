@@ -29,6 +29,7 @@ func BenchmarkMTFTransform(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
 
 	src := make([]byte, 1000000)
+	dst := make([]byte, len(src))
 	for i := range src {
 		src[i] = byte(rand.Intn(256))
 	}
@@ -36,7 +37,6 @@ func BenchmarkMTFTransform(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		dst := make([]byte, len(src))
 		mtfTransform(symbols, dst, src)
 	}
 }
@@ -45,6 +45,7 @@ func BenchmarkMTFTransformLarge(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
 
 	src := make([]byte, 1000000*6)
+	dst := make([]byte, len(src))
 	for i := range src {
 		src[i] = byte(rand.Intn(256))
 	}
@@ -52,7 +53,6 @@ func BenchmarkMTFTransformLarge(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		dst := make([]byte, len(src))
 		mtfTransform(symbols, dst, src)
 	}
 }
