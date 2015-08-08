@@ -64,11 +64,16 @@ func (b *block) Write(p []byte) (int, error) {
 func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	data := b.buf.Bytes()
 
-	// Get the symbols used in data.
+	// Get the symbols used in data. Int is used here to simplify code
+	// to generate the bitmap.
 	symbols := make([]int, 256)
 	for _, b := range data {
 		symbols[int(b)] = 1
 	}
+
+	// BWT step.
+	bwt := make([]byte, len(data))
+	bwtidx := bwTransform(bwt, data)
 
 	// Write the block header.
 	bw.WriteBits(48, blockMagic)
@@ -76,13 +81,11 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	bw.WriteBits(1, 0)
 	bitsWrote := 81
 
-	// BWT step.
-	bwt := make([]byte, len(data))
-	ptr := bwTransform(bwt, data)
-	bw.WriteBits(24, uint64(ptr))
+	// Write the BWT index.
+	bw.WriteBits(24, uint64(bwtidx))
 	bitsWrote += 24
 
-	// Write the symbol bitmap.
+	// Write the sparse bit array for used symbols.
 	symbolRangeUsedBitmap := 0
 	symbolRanges := make([]int, 16)
 	for i, symRange := range symbolRanges {
