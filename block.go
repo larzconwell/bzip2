@@ -74,6 +74,10 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	// BWT step.
 	bwt := make([]byte, len(data))
 	bwtidx := bwTransform(bwt, data)
+	data = bwt
+
+	// MTF step.
+	mtfTransform(symbols, data, data)
 
 	// Write the block header.
 	bw.WriteBits(48, blockMagic)
