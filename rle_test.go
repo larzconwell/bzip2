@@ -42,7 +42,7 @@ func TestRLIndexOf(t *testing.T) {
 	src := []byte("sk\x02\x02\x02\x02\x02\x02\x02")
 
 	dst := rlEncode(src)
-	idx := rlIndexOf(dst, len(dst)-1)
+	idx := rlIndexOf(len(dst)-1, dst)
 	if idx != len(src)-1 {
 		t.Error("Index value is incorrect. Got " + strconv.Itoa(idx) + " wanted " + strconv.Itoa(len(src)-1))
 	}

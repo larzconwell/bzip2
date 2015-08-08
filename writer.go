@@ -84,7 +84,7 @@ func (b *Writer) writeHeader() error {
 func (b *Writer) write(p []byte) (int, error) {
 	n, err := b.block.Write(p)
 	if err == errBlockSizeReached {
-		err := b.writeBlock()
+		err = b.writeBlock()
 		if err != nil {
 			return n, err
 		}

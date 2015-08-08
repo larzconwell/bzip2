@@ -45,7 +45,7 @@ func rlEncode(src []byte) []byte {
 }
 
 // rlIndexOf gets the index of the decoded form of data at index n.
-func rlIndexOf(data []byte, n int) int {
+func rlIndexOf(n int, data []byte) int {
 	var lastb byte
 	repeats := 0
 	idx := -1

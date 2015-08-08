@@ -47,7 +47,7 @@ func (b *block) Write(p []byte) (int, error) {
 	}
 
 	n, err := b.buf.Write(encoded)
-	p = p[:rlIndexOf(encoded, n-1)+1]
+	p = p[:rlIndexOf(n-1, encoded)+1]
 	if err == nil {
 		b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
 
