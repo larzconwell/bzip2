@@ -79,6 +79,9 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	// MTF step.
 	mtfTransform(symbols, data, data)
 
+	// RLE2 step.
+	data = rl2Encode(symbols, data)
+
 	// Write the block header.
 	bw.WriteBits(48, blockMagic)
 	bw.WriteBits(32, uint64(b.crc))
