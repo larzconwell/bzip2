@@ -48,6 +48,16 @@ func TestRLIndexOf(t *testing.T) {
 	}
 }
 
+func TestRLIndexOfComplex(t *testing.T) {
+	src := []byte("sk\x02\x02\x02\x02\x02\x02vrrrrrkc")
+
+	dst := rlEncode(src)
+	idx := rlIndexOf(len(dst)-2, dst)
+	if idx != len(src)-2 {
+		t.Error("Index value is incorrect. Got " + strconv.Itoa(idx) + " wanted " + strconv.Itoa(len(src)-2))
+	}
+}
+
 func BenchmarkRLEncode(b *testing.B) {
 	data := make([]byte, 260)
 	for i := range data {

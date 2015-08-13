@@ -16,7 +16,25 @@ func symbolSet(data []byte) []int {
 	return symbols
 }
 
-func TestMTFTransform(t *testing.T) {
+func TestMTFTransformEven(t *testing.T) {
+	data := []byte("banana")
+	mtfTransform(symbolSet(data), data, data)
+
+	if string(data) != "\x01\x01\x02\x01\x01\x01" {
+		t.Error("Output is incorrect")
+	}
+}
+
+func TestMTFTransformOdd(t *testing.T) {
+	data := []byte("baanana")
+	mtfTransform(symbolSet(data), data, data)
+
+	if string(data) != "\x01\x01\x00\x02\x01\x01\x01" {
+		t.Error("Output is incorrect")
+	}
+}
+
+func TestMTFTransformAfterBWT(t *testing.T) {
 	data := []byte("nnbaaa")
 	mtfTransform(symbolSet(data), data, data)
 
