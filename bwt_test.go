@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestBWTransform(t *testing.T) {
+func TestBWTransformEven(t *testing.T) {
 	src := []byte("banana")
 	dst := make([]byte, len(src))
 
@@ -18,6 +18,34 @@ func TestBWTransform(t *testing.T) {
 
 	if string(dst) != "nnbaaa" {
 		t.Error("Output is incorrect. Got " + string(dst) + " wanted nnbaaa")
+	}
+}
+
+func TestBWTransformOdd(t *testing.T) {
+	src := []byte("baanana")
+	dst := make([]byte, len(src))
+
+	ptr := bwTransform(dst, src)
+	if ptr != 4 {
+		t.Error("Value ptr is incorrect. Got " + strconv.Itoa(ptr) + " wanted 4")
+	}
+
+	if string(dst) != "bnnaaaa" {
+		t.Error("Output is incorrect. Got " + string(dst) + " wanted bnnaaaa")
+	}
+}
+
+func TestBWTransformAfterRLE(t *testing.T) {
+	src := []byte("baaaa\x00nana")
+	dst := make([]byte, len(src))
+
+	ptr := bwTransform(dst, src)
+	if ptr != 7 {
+		t.Error("Value ptr is incorrect. Got " + strconv.Itoa(ptr) + " wanted 7")
+	}
+
+	if string(dst) != "aaaabnnaa\x00" {
+		t.Error("Output is incorrect. Got " + string(dst) + " wanted aaaabnnaa\\0")
 	}
 }
 

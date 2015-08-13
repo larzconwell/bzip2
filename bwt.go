@@ -10,11 +10,16 @@ import (
 type rotateSort struct {
 	data    []byte
 	rotates []int
+	scrap   []byte
 }
 
 // newRotateSort creates a rotateSort generating the rotations.
 func newRotateSort(data []byte) *rotateSort {
-	rs := &rotateSort{data: data, rotates: make([]int, len(data))}
+	rs := &rotateSort{
+		data:    data,
+		rotates: make([]int, len(data)),
+		scrap:   make([]byte, len(data)),
+	}
 	for i := range rs.rotates {
 		rs.rotates[i] = i
 	}
@@ -27,7 +32,33 @@ func (rs *rotateSort) Len() int {
 }
 
 func (rs *rotateSort) Less(i, j int) bool {
-	return bytes.Compare(rs.data[rs.rotates[i]:], rs.data[rs.rotates[j]:]) == -1
+	var (
+		a []byte
+		b []byte
+	)
+	irotate := rs.rotates[i]
+	jrotate := rs.rotates[j]
+
+	if irotate > jrotate { // Data at i is short than j.
+		b = rs.data[jrotate:]
+
+		apref := rs.data[irotate:]
+		copy(rs.scrap, apref)
+		copy(rs.scrap[len(apref):], rs.data[:len(b)-len(apref)])
+		a = rs.scrap[:len(b)]
+	} else if irotate < jrotate { // Data at i is longer than j.
+		a = rs.data[irotate:]
+
+		bpref := rs.data[jrotate:]
+		copy(rs.scrap, bpref)
+		copy(rs.scrap[len(bpref):], rs.data[:len(a)-len(bpref)])
+		b = rs.scrap[:len(a)]
+	} else {
+		a = rs.data[rs.rotates[i]:]
+		b = rs.data[rs.rotates[j]:]
+	}
+
+	return bytes.Compare(a, b) == -1
 }
 
 func (rs *rotateSort) Swap(i, j int) {

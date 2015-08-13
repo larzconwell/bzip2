@@ -29,6 +29,9 @@ func TestBlockFullWrite(t *testing.T) {
 	if err == nil {
 		t.Error("Block full size write should return size reached error")
 	}
+	if err != errBlockSizeReached {
+		t.Fatal(err)
+	}
 }
 
 func TestBlockMultiWrite(t *testing.T) {
@@ -47,6 +50,9 @@ func TestBlockMultiWrite(t *testing.T) {
 	if err == nil {
 		t.Error("Block full size write should return size reached error")
 	}
+	if err != errBlockSizeReached {
+		t.Fatal(err)
+	}
 }
 
 func TestBlockOverWrite(t *testing.T) {
@@ -55,6 +61,9 @@ func TestBlockOverWrite(t *testing.T) {
 	n, err := block.Write(noRunData(block.size + 500))
 	if err == nil {
 		t.Error("Block full size write should return size reached error")
+	}
+	if err != errBlockSizeReached {
+		t.Fatal(err)
 	}
 
 	if n != block.size {
