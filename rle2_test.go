@@ -2,7 +2,6 @@ package bzip2
 
 import (
 	"math/rand"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -16,8 +15,34 @@ func TestRL2Encode(t *testing.T) {
 		t.Error("RLE2 length doesn't match expected length")
 	}
 	for i, d := range dst {
+		if d != uint16(expected[i]) {
+			t.Error("Value", int(d), "isn't the expected value", int(expected[i]))
+		}
+	}
+}
+
+func TestRL2EncodeFullRange(t *testing.T) {
+	symbolSetData := make([]byte, 256)
+	for i := range symbolSetData {
+		symbolSetData[i] = byte(i)
+	}
+
+	// src is the results of MTF where each byte is used in reverse order.
+	src := make([]byte, 256)
+	expected := make([]uint16, 257)
+	for i := range src {
+		src[i] = '\xff'
+		expected[i] = '\u0100'
+	}
+	expected[len(expected)-1] = uint16(len(expected))
+
+	dst := rl2Encode(symbolSet(symbolSetData), src)
+	if len(dst) != len(expected) {
+		t.Error("RLE2 length doesn't match expected length")
+	}
+	for i, d := range dst {
 		if d != expected[i] {
-			t.Error("Byte value " + strconv.Itoa(int(d)) + " isn't the expected value " + strconv.Itoa(int(expected[i])))
+			t.Error("Value", int(d), "isn't the expected value", int(expected[i]))
 		}
 	}
 }
@@ -31,8 +56,8 @@ func TestRL2EncodeShortRun(t *testing.T) {
 		t.Error("RLE2 length doesn't match expected length")
 	}
 	for i, d := range dst {
-		if d != expected[i] {
-			t.Error("Byte value " + strconv.Itoa(int(d)) + " isn't the expected value " + strconv.Itoa(int(expected[i])))
+		if d != uint16(expected[i]) {
+			t.Error("Value", int(d), "isn't the expected value", int(expected[i]))
 		}
 	}
 }

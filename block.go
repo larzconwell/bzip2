@@ -66,7 +66,7 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 
 	// Get the symbols used in data. Int is used here to simplify code
 	// to generate the bitmap.
-	symbols := make([]int, 256)
+	var symbols [256]int
 	for _, b := range data {
 		symbols[int(b)] = 1
 	}
@@ -80,7 +80,7 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	mtfTransform(symbols, data, data)
 
 	// RLE2 step.
-	data = rl2Encode(symbols, data)
+	//rle := rl2Encode(symbols, data)
 
 	// Write the block header.
 	bw.WriteBits(48, blockMagic)

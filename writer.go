@@ -48,7 +48,10 @@ func NewWriterLevel(w io.Writer, blockSize int) *Writer {
 		blockSize = 9
 	}
 
-	return &Writer{bw: newBitWriter(w), block: newBlock(blockSize * baseBlockSize)}
+	return &Writer{
+		bw:    newBitWriter(w),
+		block: newBlock(blockSize * baseBlockSize),
+	}
 }
 
 // Write writes a compressed form of p to the underlying writer. The writes may

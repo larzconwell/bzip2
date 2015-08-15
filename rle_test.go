@@ -1,7 +1,6 @@
 package bzip2
 
 import (
-	"strconv"
 	"testing"
 )
 
@@ -15,7 +14,7 @@ func TestRLEncode(t *testing.T) {
 	}
 	for i, d := range dst {
 		if d != expected[i] {
-			t.Error("Byte value " + string(d) + " isn't the expected value " + string(expected[i]))
+			t.Error("Byte value", string(d), "isn't the expected value", string(expected[i]))
 		}
 	}
 }
@@ -33,7 +32,7 @@ func TestRLEncodeLong(t *testing.T) {
 	}
 	for i, actual := range dst {
 		if actual != expected[i] {
-			t.Error("Byte value " + string(actual) + " isn't the expected value " + string(expected[i]))
+			t.Error("Byte value", string(actual), "isn't the expected value", string(expected[i]))
 		}
 	}
 }
@@ -44,7 +43,7 @@ func TestRLIndexOf(t *testing.T) {
 	dst := rlEncode(src)
 	idx := rlIndexOf(len(dst)-1, dst)
 	if idx != len(src)-1 {
-		t.Error("Index value is incorrect. Got " + strconv.Itoa(idx) + " wanted " + strconv.Itoa(len(src)-1))
+		t.Error("Index value is incorrect. Got", idx, "wanted", len(src)-1)
 	}
 }
 
@@ -54,7 +53,7 @@ func TestRLIndexOfComplex(t *testing.T) {
 	dst := rlEncode(src)
 	idx := rlIndexOf(len(dst)-2, dst)
 	if idx != len(src)-2 {
-		t.Error("Index value is incorrect. Got " + strconv.Itoa(idx) + " wanted " + strconv.Itoa(len(src)-2))
+		t.Error("Index value is incorrect. Got", idx, "wanted", len(src)-2)
 	}
 }
 

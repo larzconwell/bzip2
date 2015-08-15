@@ -7,8 +7,8 @@ import (
 )
 
 // symbolSet gets the symbol set for a slice of bytes.
-func symbolSet(data []byte) []int {
-	symbols := make([]int, 256)
+func symbolSet(data []byte) [256]int {
+	var symbols [256]int
 	for _, b := range data {
 		symbols[int(b)] = 1
 	}
@@ -30,6 +30,18 @@ func TestMTFTransformOdd(t *testing.T) {
 	mtfTransform(symbolSet(data), data, data)
 
 	if string(data) != "\x01\x01\x00\x02\x01\x01\x01" {
+		t.Error("Output is incorrect")
+	}
+}
+
+func TestMTFTransformFullRange(t *testing.T) {
+	data := make([]byte, 256)
+	for i := range data {
+		data[i] = byte(255 - i)
+	}
+
+	mtfTransform(symbolSet(data), data, data)
+	if data[0] != '\xFF' {
 		t.Error("Output is incorrect")
 	}
 }
