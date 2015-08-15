@@ -30,8 +30,8 @@ type Writer struct {
 // NewWriter returns a new Writer. Writes to the returned writer are compressed
 // and written to w.
 //
-// It is the caller's responsibility to call Close on the WriteCloser when done.
-// Writes may be buffered and not flushed until Close.
+// It is the caller's responsibility to call Close on the WriteCloser when
+// done. Writes may be buffered and not flushed until Close.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{bw: newBitWriter(w), block: newBlock(6 * baseBlockSize)}
 }
@@ -136,7 +136,8 @@ func (b *Writer) Reset(w io.Writer) {
 	b.closed = false
 }
 
-// Close closes the Writer, flushing any unwritten data to the underlying writer.
+// Close closes the Writer, flushing any unwritten data to the underlying
+// writer.
 func (b *Writer) Close() error {
 	if b.closed {
 		return nil

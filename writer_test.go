@@ -48,7 +48,8 @@ func TestIncompleteBlock(t *testing.T) {
 	}
 
 	if out.String() != string(expected) {
-		t.Error("Output is incorrect. Got " + out.String() + " wanted " + string(expected))
+		t.Error("Output is incorrect. Got", out.String(), "wanted",
+			string(expected))
 	}
 }
 

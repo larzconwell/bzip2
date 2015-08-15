@@ -42,7 +42,8 @@ func TestBlockMultiWrite(t *testing.T) {
 	}
 
 	if n != block.size/2 {
-		t.Error("Block half write wrote unexpected number of bytes. Got", n, "wanted", block.size/2)
+		t.Error("Block half write wrote unexpected number of bytes. Got", n,
+			"wanted", block.size/2)
 	}
 
 	_, err = block.Write(noRunData(block.size / 2))
@@ -66,6 +67,7 @@ func TestBlockOverWrite(t *testing.T) {
 	}
 
 	if n != block.size {
-		t.Error("Block write wrote unexpected number of bytes. Got", n, "wanted", block.size)
+		t.Error("Block write wrote unexpected number of bytes. Got", n,
+			"wanted", block.size)
 	}
 }

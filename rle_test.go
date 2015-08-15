@@ -14,7 +14,8 @@ func TestRLEncode(t *testing.T) {
 	}
 	for i, d := range dst {
 		if d != expected[i] {
-			t.Error("Byte value", string(d), "isn't the expected value", string(expected[i]))
+			t.Error("Byte value", string(d), "isn't the expected value",
+				string(expected[i]))
 		}
 	}
 }
@@ -32,7 +33,8 @@ func TestRLEncodeLong(t *testing.T) {
 	}
 	for i, actual := range dst {
 		if actual != expected[i] {
-			t.Error("Byte value", string(actual), "isn't the expected value", string(expected[i]))
+			t.Error("Byte value", string(actual), "isn't the expected value",
+				string(expected[i]))
 		}
 	}
 }
