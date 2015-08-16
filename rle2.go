@@ -2,8 +2,9 @@ package bzip2
 
 // rl2Encode encodes src using the RLE2 format after the MTF transformation.
 // The return type uses uint16 because it's possible to write values greater
-// than 255 if the full byte range is used.
-func rl2Encode(symbols [256]int, src []byte) []uint16 {
+// than 255 if the full byte range is used. The frequency of values is also
+// returned.
+func rl2Encode(symbols [256]int, src []byte) ([]int, []uint16) {
 	var repeats uint
 	dst := make([]uint16, 0, len(src))
 
@@ -13,13 +14,16 @@ func rl2Encode(symbols [256]int, src []byte) []uint16 {
 			numSymbols++
 		}
 	}
+	freq := make([]int, numSymbols+2)
 
 	finishRun := func() {
 		for repeats > 0 {
 			if repeats&1 > 0 {
+				freq['\x00']++
 				dst = append(dst, '\x00')
 				repeats--
 			} else {
+				freq['\x01']++
 				dst = append(dst, '\x01')
 				repeats -= 2
 			}
@@ -35,10 +39,14 @@ func rl2Encode(symbols [256]int, src []byte) []uint16 {
 		}
 
 		finishRun()
-		dst = append(dst, uint16(b)+1)
 		repeats = 0
+
+		v := uint16(b) + 1
+		freq[v]++
+		dst = append(dst, v)
 	}
 
 	finishRun()
-	return append(dst, numSymbols+1)
+	freq[numSymbols+1]++
+	return freq, append(dst, numSymbols+1)
 }

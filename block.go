@@ -80,7 +80,7 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	mtfTransform(symbols, data, data)
 
 	// RLE2 step.
-	//rle := rl2Encode(symbols, data)
+	//freq, rle := rl2Encode(symbols, data)
 
 	// Write the block header.
 	bw.WriteBits(48, blockMagic)
