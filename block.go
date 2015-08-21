@@ -3,7 +3,6 @@ package bzip2
 import (
 	"bytes"
 	"errors"
-	"hash/crc32"
 	"math"
 )
 
@@ -50,7 +49,7 @@ func (b *block) Write(p []byte) (int, error) {
 	n, err := b.buf.Write(encoded)
 	p = p[:rlIndexOf(n-1, encoded)+1]
 	if err == nil {
-		b.crc = crc32.Update(b.crc, crc32.IEEETable, p)
+		b.crc = crcUpdate(b.crc, p)
 
 		if exceedsSize || b.buf.Len() == b.size {
 			err = errBlockSizeReached

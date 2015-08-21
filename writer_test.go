@@ -5,7 +5,9 @@ import (
 	"compress/bzip2"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestEmptyValid(t *testing.T) {
@@ -26,7 +28,6 @@ func TestEmptyValid(t *testing.T) {
 	}
 }
 
-/*
 func TestIncompleteBlock(t *testing.T) {
 	var buf bytes.Buffer
 	var out bytes.Buffer
@@ -58,12 +59,12 @@ func TestFilledBlock(t *testing.T) {
 
 	var buf bytes.Buffer
 	var out bytes.Buffer
-	expected := make([]byte, 2*baseBlockSize)
+	expected := make([]byte, baseBlockSize)
 	for i := range expected {
 		expected[i] = byte(rand.Intn(256))
 	}
 
-	writer := NewWriterLevel(&buf, 2)
+	writer := NewWriterLevel(&buf, 1)
 	_, err := writer.Write(expected)
 	if err == nil {
 		err = writer.Close()
@@ -88,12 +89,12 @@ func TestMultiBlock(t *testing.T) {
 
 	var buf bytes.Buffer
 	var out bytes.Buffer
-	expected := make([]byte, 3*baseBlockSize)
+	expected := make([]byte, 2*baseBlockSize)
 	for i := range expected {
 		expected[i] = byte(rand.Intn(256))
 	}
 
-	writer := NewWriterLevel(&buf, 2)
+	writer := NewWriterLevel(&buf, 1)
 	_, err := writer.Write(expected)
 	if err == nil {
 		err = writer.Close()
@@ -112,4 +113,3 @@ func TestMultiBlock(t *testing.T) {
 		t.Error("Output is incorrect.")
 	}
 }
-*/
