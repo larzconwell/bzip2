@@ -15,8 +15,8 @@ var (
 // afterwards.
 type bitWriter struct {
 	w    io.Writer
-	bits uint64 // Bits waiting to be written.
-	n    uint   // Number of bits in bits.
+	bits uint64
+	n    uint
 	err  error
 }
 
@@ -61,7 +61,7 @@ func (bw *bitWriter) WriteBits(n uint, bits uint64) {
 	// Bytes exists, but some bits may be left.
 	bits = (bw.bits << n) | bits
 	bw.n = total % 8
-	bw.bits = bits & (1<<uint64(bw.n) - 1)
+	bw.bits = bits & (1<<bw.n - 1)
 	bits = (bits ^ uint64(bw.n)) >> bw.n
 
 	list := byteList(total-bw.n, bits)
@@ -69,7 +69,7 @@ func (bw *bitWriter) WriteBits(n uint, bits uint64) {
 }
 
 // Err gets the error for the bit writer.
-func (bw *bitWriter) Err() error {
+func (bw bitWriter) Err() error {
 	return bw.err
 }
 

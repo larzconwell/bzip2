@@ -1,7 +1,9 @@
 package bzip2
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestRLEncode(t *testing.T) {
@@ -12,16 +14,16 @@ func TestRLEncode(t *testing.T) {
 	if len(dst) != len(expected) {
 		t.Error("RLE length doesn't match expected length")
 	}
-	for i, d := range dst {
-		if d != expected[i] {
-			t.Error("Byte value", string(d), "isn't the expected value",
+	for i, b := range dst {
+		if b != expected[i] {
+			t.Error("Byte value", string(b), "isn't the expected value",
 				string(expected[i]))
 		}
 	}
 }
 
 func TestRLEncodeLong(t *testing.T) {
-	expected := []byte("bbbb\xFFb")
+	expected := []byte("bbbb\xffb")
 	src := make([]byte, 260)
 	for i := range src {
 		src[i] = 'b'
@@ -31,9 +33,9 @@ func TestRLEncodeLong(t *testing.T) {
 	if len(dst) != len(expected) {
 		t.Error("RLE length doesn't match expected length")
 	}
-	for i, actual := range dst {
-		if actual != expected[i] {
-			t.Error("Byte value", string(actual), "isn't the expected value",
+	for i, b := range dst {
+		if b != expected[i] {
+			t.Error("Byte value", string(b), "isn't the expected value",
 				string(expected[i]))
 		}
 	}
@@ -60,9 +62,11 @@ func TestRLIndexOfComplex(t *testing.T) {
 }
 
 func BenchmarkRLEncode(b *testing.B) {
-	data := make([]byte, 260)
+	rand.Seed(time.Now().UnixNano())
+
+	data := make([]byte, 100000)
 	for i := range data {
-		data[i] = 'b'
+		data[i] = byte(rand.Intn(256))
 	}
 
 	b.ResetTimer()

@@ -8,6 +8,7 @@ import (
 func TestWriteBits(t *testing.T) {
 	var buf bytes.Buffer
 	bw := newBitWriter(&buf)
+
 	bw.WriteBits(4, 11)
 	bw.WriteBits(4, 13)
 	if buf.Len() != 1 {
@@ -31,7 +32,7 @@ func TestWriteBits(t *testing.T) {
 		t.Error("Last byte should have been written but didn't")
 	}
 
-	expected := []byte{189, 181, 210, 182, 80}
+	expected := []byte{'\xbd', '\xb5', '\xd2', '\xb6', '\x50'}
 	for i, actual := range buf.Bytes() {
 		if actual != expected[i] {
 			t.Error("Byte doesn't match expected value")
@@ -42,7 +43,8 @@ func TestWriteBits(t *testing.T) {
 func TestWriteBytes(t *testing.T) {
 	var buf bytes.Buffer
 	bw := newBitWriter(&buf)
-	bw.WriteBytes([]byte{1})
+
+	bw.WriteBytes([]byte{'\x01'})
 	if buf.Len() != 1 {
 		t.Error("Wrong number of bytes written")
 	}
@@ -51,8 +53,9 @@ func TestWriteBytes(t *testing.T) {
 func TestWriteBytesUnfinished(t *testing.T) {
 	var buf bytes.Buffer
 	bw := newBitWriter(&buf)
+
 	bw.WriteBits(4, 8)
-	bw.WriteBytes([]byte{1})
+	bw.WriteBytes([]byte{'\x01'})
 	err := bw.Err()
 	if err == nil {
 		t.Error("No error returned for unfinished bit write")
@@ -65,15 +68,16 @@ func TestWriteBytesUnfinished(t *testing.T) {
 func TestMixWriteWriteBits(t *testing.T) {
 	var buf bytes.Buffer
 	bw := newBitWriter(&buf)
+
 	bw.WriteBits(4, 8)
 	bw.WriteBits(4, 7)
-	bw.WriteBytes([]byte{85, 100})
+	bw.WriteBytes([]byte{'\x55', '\x64'})
 	bw.WriteBits(8, 189)
 	if buf.Len() != 4 {
 		t.Error("Wrong number of bits and bytes written")
 	}
 
-	expected := []byte{135, 85, 100, 189}
+	expected := []byte{'\x87', '\x55', '\x64', '\xbd'}
 	for i, actual := range buf.Bytes() {
 		if actual != expected[i] {
 			t.Error("Byte doesn't match expected value")

@@ -1,6 +1,6 @@
 package bzip2
 
-// rlEncode encodes src using the RLE format.
+// rlEncode encodes src using run-length encoding.
 func rlEncode(src []byte) []byte {
 	var lastb byte
 	repeats := 0
@@ -17,7 +17,7 @@ func rlEncode(src []byte) []byte {
 			list := []byte{lastb, lastb, lastb, lastb, byte(repeats - 4)}
 			dst = append(dst, list...)
 		} else {
-			list := []byte{lastb, lastb, lastb, lastb, byte(255)}
+			list := []byte{lastb, lastb, lastb, lastb, '\xff'}
 			dst = append(dst, list...)
 
 			repeats -= 259

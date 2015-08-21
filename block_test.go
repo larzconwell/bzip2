@@ -7,15 +7,12 @@ import (
 // noRunData produces data to write with no runs in it.
 func noRunData(size int) []byte {
 	data := make([]byte, size)
-	b := 0
+	b := byte('\x00')
 
 	for i := range data {
-		data[i] = byte(b)
+		data[i] = b
 
 		b++
-		if b > 255 {
-			b = 0
-		}
 	}
 
 	return data
@@ -69,5 +66,18 @@ func TestBlockOverWrite(t *testing.T) {
 	if n != block.size {
 		t.Error("Block write wrote unexpected number of bytes. Got", n,
 			"wanted", block.size)
+	}
+}
+
+func TestSymbolSet(t *testing.T) {
+	symbols, reducedSymbols := symbolSet([]byte("banana"))
+	if string(reducedSymbols) != "abn" {
+		t.Error("The reduced symbol set doesn't include the correct bytes")
+	}
+
+	for i, present := range symbols {
+		if present > 1 && (i != 'a' || i != 'b' || i != 'n') {
+			t.Error("Symbol set includes a byte that should be set")
+		}
 	}
 }

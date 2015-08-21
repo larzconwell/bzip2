@@ -20,6 +20,7 @@ func newRotateSort(data []byte) *rotateSort {
 		rotates: make([]int, len(data)),
 		scrap:   make([]byte, len(data)),
 	}
+
 	for i := range rs.rotates {
 		rs.rotates[i] = i
 	}
@@ -27,10 +28,12 @@ func newRotateSort(data []byte) *rotateSort {
 	return rs
 }
 
-func (rs *rotateSort) Len() int {
+// Len gets the number of rotations in data.
+func (rs rotateSort) Len() int {
 	return len(rs.rotates)
 }
 
+// Less checks if the rotation i is lexigraphically less than the rotation j.
 func (rs *rotateSort) Less(i, j int) bool {
 	var (
 		a []byte
@@ -61,7 +64,8 @@ func (rs *rotateSort) Less(i, j int) bool {
 	return bytes.Compare(a, b) == -1
 }
 
-func (rs *rotateSort) Swap(i, j int) {
+// Swap swaps the rotations i and j.
+func (rs rotateSort) Swap(i, j int) {
 	rs.rotates[i], rs.rotates[j] = rs.rotates[j], rs.rotates[i]
 }
 
@@ -78,7 +82,7 @@ func bwTransform(dst, src []byte) int {
 		data := src[r:]
 		datalen := len(data)
 
-		// If it's the original input, set the index and the last character.
+		// If it's the src data, set the index and the last character.
 		if datalen == srclen {
 			idx = i
 			dst[i] = data[srclen-1]
