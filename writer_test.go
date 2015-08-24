@@ -10,10 +10,39 @@ import (
 	"time"
 )
 
+func TestWriteAfterClose(t *testing.T) {
+	var buf bytes.Buffer
+	writer := NewWriter(&buf)
+	err := writer.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = writer.Write([]byte{})
+	if err != nil && err != ErrWriteAfterClose {
+		t.Fatal(err)
+	}
+
+	if err == nil {
+		t.Error("Write after closing should error but didn't")
+	}
+
+	// Minimally test reset.
+	writer.Reset(&buf)
+	_, err = writer.Write([]byte{})
+	if err != nil && err != ErrWriteAfterClose {
+		t.Fatal(err)
+	}
+
+	if err != nil {
+		t.Error("Write after reset shouldn't return ErrWriterAfterClose but did")
+	}
+}
+
 func TestEmptyValid(t *testing.T) {
 	var buf bytes.Buffer
 	writer := NewWriter(&buf)
-	_, err := writer.Write(make([]byte, 0))
+	_, err := writer.Write([]byte{})
 	if err == nil {
 		err = writer.Close()
 	}
