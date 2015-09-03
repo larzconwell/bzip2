@@ -60,8 +60,8 @@ func (b *block) Write(p []byte) (int, error) {
 }
 
 // WriteBlock compresses the content buffered and writes a block to the bit
-// writer given. The number of bits written is returned.
-func (b *block) WriteBlock(bw *bitWriter) (int, error) {
+// writer given.
+func (b *block) WriteBlock(bw *bitWriter) error {
 	data := b.buf.Bytes()
 	symbols, reducedSymbols := symbolSet(data)
 
@@ -113,26 +113,21 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 	bw.WriteBits(48, blockMagic)
 	bw.WriteBits(32, uint64(b.crc))
 	bw.WriteBits(1, 0)
-	bitsWrote := 81
 
 	// Write the BWT index.
 	bw.WriteBits(24, uint64(bwtidx))
-	bitsWrote += 24
 
 	// Write the symbol bitmaps.
 	bw.WriteBits(16, uint64(symbolRangeUsedBitmap))
-	bitsWrote += 16
 	for _, symRange := range symbolRanges {
 		if symRange > 0 {
 			bw.WriteBits(16, uint64(symRange))
-			bitsWrote += 16
 		}
 	}
 
 	// Write the huffman tree numbers.
 	bw.WriteBits(3, uint64(len(huffmanTrees)))
 	bw.WriteBits(15, uint64(len(treeIndexes)))
-	bitsWrote += 18
 
 	// Write the huffman tree indexes in unary encoding.
 	for _, idx := range treeIndexesBytes {
@@ -141,7 +136,6 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 		}
 
 		bw.WriteBits(1, 0)
-		bitsWrote += int(idx) + 1
 	}
 
 	// Write the delta encoded code-lengths for the huffman trees codes.
@@ -154,7 +148,6 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 			}
 		}
 		bw.WriteBits(5, uint64(length))
-		bitsWrote += 5
 
 		// Write the code-lengths as modifications to the base length.
 		for _, code := range tree.Codes {
@@ -172,7 +165,6 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 			}
 
 			bw.WriteBits(1, 0)
-			bitsWrote += delta + 1
 		}
 	}
 
@@ -190,11 +182,10 @@ func (b *block) WriteBlock(bw *bitWriter) (int, error) {
 		code := huffmanTree.Codes[b]
 
 		bw.WriteBits(uint(code.Len()), code.Bits)
-		bitsWrote += code.Len()
 		decoded++
 	}
 
-	return bitsWrote, bw.Err()
+	return bw.Err()
 }
 
 // symbolSet gets the symbol set for a slice of bytes. Int is used instead

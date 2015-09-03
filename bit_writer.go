@@ -68,6 +68,11 @@ func (bw *bitWriter) WriteBits(n uint, bits uint64) {
 	_, bw.err = bw.w.Write(list)
 }
 
+// Buffered gets the number of buffered bits.
+func (bw bitWriter) Buffered() uint {
+	return bw.n
+}
+
 // Err gets the error for the bit writer.
 func (bw bitWriter) Err() error {
 	return bw.err

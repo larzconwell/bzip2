@@ -22,7 +22,6 @@ type Writer struct {
 	bw          *bitWriter
 	block       *block
 	crc         uint32
-	totalWrote  int // In bits.
 	wroteHeader bool
 	closed      bool
 }
@@ -105,13 +104,12 @@ func (b *Writer) write(p []byte) (int, error) {
 // writeBlock writes the current block to the underlying writer, and updates
 // the files crc and total bits wrote.
 func (b *Writer) writeBlock() error {
-	n, err := b.block.WriteBlock(b.bw)
+	err := b.block.WriteBlock(b.bw)
 	if err != nil {
 		return err
 	}
 
 	b.crc = ((b.crc << 1) | (b.crc >> 31)) ^ b.block.crc
-	b.totalWrote += n
 	b.block = newBlock(b.block.size)
 	return nil
 }
@@ -131,7 +129,6 @@ func (b *Writer) Reset(w io.Writer) {
 	b.bw = newBitWriter(w)
 	b.block = newBlock(b.block.size)
 	b.crc = 0
-	b.totalWrote = 0
 	b.wroteHeader = false
 	b.closed = false
 }
@@ -151,9 +148,9 @@ func (b *Writer) Close() error {
 
 	b.bw.WriteBits(48, finalMagic)
 	b.bw.WriteBits(32, uint64(b.crc))
-	padding := b.totalWrote % 8
-	if padding != 0 {
-		b.bw.WriteBits(uint(padding), 0)
+	bufferedBits := b.bw.Buffered()
+	if bufferedBits != 0 {
+		b.bw.WriteBits(8-bufferedBits, 0)
 	}
 
 	return b.bw.Err()
