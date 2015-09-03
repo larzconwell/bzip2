@@ -19,6 +19,8 @@ func rl2Encode(symbols []byte, src []byte) []uint16 {
 
 			repeats >>= 1
 		}
+
+		repeats = 0
 	}
 
 	for _, b := range src {
@@ -28,7 +30,6 @@ func rl2Encode(symbols []byte, src []byte) []uint16 {
 		}
 
 		finishRun()
-		repeats = 0
 
 		v := uint16(b) + 1
 		dst = append(dst, v)
