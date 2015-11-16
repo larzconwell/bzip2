@@ -1,12 +1,12 @@
-package bzip2
+package bwt
 
 import (
 	"bytes"
 	"sort"
 )
 
-// rotateSort is a sort.Interface that sorts the rotations of the given data
-// lexicographically.
+// rotateSort is a sort.Interface that sorts the rotations of
+// the given data lexicographically.
 type rotateSort struct {
 	data    []byte
 	rotates []int
@@ -33,12 +33,11 @@ func (rs rotateSort) Len() int {
 	return len(rs.rotates)
 }
 
-// Less checks if the rotation i is lexigraphically less than the rotation j.
+// Less checks if the rotation i is lexigraphically less
+// than the rotation j.
 func (rs *rotateSort) Less(i, j int) bool {
-	var (
-		a []byte
-		b []byte
-	)
+	var a []byte
+	var b []byte
 	irotate := rs.rotates[i]
 	jrotate := rs.rotates[j]
 
@@ -69,10 +68,10 @@ func (rs rotateSort) Swap(i, j int) {
 	rs.rotates[i], rs.rotates[j] = rs.rotates[j], rs.rotates[i]
 }
 
-// bwTransform performs the Burrows-Wheeler Transform on the src slice and
-// writes the results to dst, the index to the original src after sorting
-// is returned.
-func bwTransform(dst, src []byte) int {
+// Transform performs the Burrows-Wheeler Transform on the src
+// slice and writes the results to dst, the index to the original
+// src after sorting is returned.
+func Transform(dst, src []byte) int {
 	srclen := len(src)
 	rs := newRotateSort(src)
 	sort.Sort(rs)

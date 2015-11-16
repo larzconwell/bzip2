@@ -1,4 +1,4 @@
-package bzip2
+package rle
 
 import (
 	"math/rand"
@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-func TestRLEncode(t *testing.T) {
+func TestEncode(t *testing.T) {
 	src := []byte("aeecccbhzzzzkkkkkkkkvvvvvrvv")
 	expected := []byte("aeecccbhzzzz\x00kkkk\x04vvvv\x01rvv")
 
-	dst := rlEncode(src)
+	dst := Encode(src)
 	if len(dst) != len(expected) {
 		t.Error("RLE length doesn't match expected length")
 	}
@@ -22,14 +22,14 @@ func TestRLEncode(t *testing.T) {
 	}
 }
 
-func TestRLEncodeLong(t *testing.T) {
+func TestEncodeLong(t *testing.T) {
 	expected := []byte("bbbb\xffb")
 	src := make([]byte, 260)
 	for i := range src {
 		src[i] = 'b'
 	}
 
-	dst := rlEncode(src)
+	dst := Encode(src)
 	if len(dst) != len(expected) {
 		t.Error("RLE length doesn't match expected length")
 	}
@@ -41,27 +41,7 @@ func TestRLEncodeLong(t *testing.T) {
 	}
 }
 
-func TestRLIndexOf(t *testing.T) {
-	src := []byte("sk\x02\x02\x02\x02\x02\x02\x02")
-
-	dst := rlEncode(src)
-	idx := rlIndexOf(len(dst)-1, dst)
-	if idx != len(src)-1 {
-		t.Error("Index value is incorrect. Got", idx, "wanted", len(src)-1)
-	}
-}
-
-func TestRLIndexOfComplex(t *testing.T) {
-	src := []byte("sk\x02\x02\x02\x02\x02\x02vrrrrrkc")
-
-	dst := rlEncode(src)
-	idx := rlIndexOf(len(dst)-2, dst)
-	if idx != len(src)-2 {
-		t.Error("Index value is incorrect. Got", idx, "wanted", len(src)-2)
-	}
-}
-
-func BenchmarkRLEncode(b *testing.B) {
+func BenchmarkEncode(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
 
 	data := make([]byte, 100000)
@@ -71,6 +51,6 @@ func BenchmarkRLEncode(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		rlEncode(data)
+		Encode(data)
 	}
 }

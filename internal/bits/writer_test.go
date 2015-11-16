@@ -1,4 +1,4 @@
-package bzip2
+package bits
 
 import (
 	"bytes"
@@ -7,27 +7,27 @@ import (
 
 func TestWriteBits(t *testing.T) {
 	var buf bytes.Buffer
-	bw := newBitWriter(&buf)
+	w := NewWriter(&buf)
 
-	bw.WriteBits(4, 11)
-	bw.WriteBits(4, 13)
+	w.WriteBits(4, 11)
+	w.WriteBits(4, 13)
 	if buf.Len() != 1 {
 		t.Error("First byte should have been written but didn't")
 	}
 
-	bw.WriteBits(5, 22)
-	bw.WriteBits(7, 93)
+	w.WriteBits(5, 22)
+	w.WriteBits(7, 93)
 	if buf.Len() != 2 {
 		t.Error("Second byte should have been written but didn't")
 	}
 
-	bw.WriteBits(4, 2)
-	bw.WriteBits(11, 1458)
+	w.WriteBits(4, 2)
+	w.WriteBits(11, 1458)
 	if buf.Len() != 4 {
 		t.Error("Bytes should have been written but didn't")
 	}
 
-	bw.WriteBits(5, 16)
+	w.WriteBits(5, 16)
 	if buf.Len() != 5 {
 		t.Error("Last byte should have been written but didn't")
 	}
@@ -42,9 +42,9 @@ func TestWriteBits(t *testing.T) {
 
 func TestWriteBytes(t *testing.T) {
 	var buf bytes.Buffer
-	bw := newBitWriter(&buf)
+	w := NewWriter(&buf)
 
-	bw.WriteBytes([]byte{'\x01'})
+	w.WriteBytes([]byte{'\x01'})
 	if buf.Len() != 1 {
 		t.Error("Wrong number of bytes written")
 	}
@@ -52,27 +52,27 @@ func TestWriteBytes(t *testing.T) {
 
 func TestWriteBytesUnfinished(t *testing.T) {
 	var buf bytes.Buffer
-	bw := newBitWriter(&buf)
+	w := NewWriter(&buf)
 
-	bw.WriteBits(4, 8)
-	bw.WriteBytes([]byte{'\x01'})
-	err := bw.Err()
+	w.WriteBits(4, 8)
+	w.WriteBytes([]byte{'\x01'})
+	err := w.Err()
 	if err == nil {
 		t.Error("No error returned for unfinished bit write")
 	}
-	if err != errWriteUnfinishedBits {
+	if err != ErrWriteBufferedBits {
 		t.Fatal(err)
 	}
 }
 
 func TestMixWriteWriteBits(t *testing.T) {
 	var buf bytes.Buffer
-	bw := newBitWriter(&buf)
+	w := NewWriter(&buf)
 
-	bw.WriteBits(4, 8)
-	bw.WriteBits(4, 7)
-	bw.WriteBytes([]byte{'\x55', '\x64'})
-	bw.WriteBits(8, 189)
+	w.WriteBits(4, 8)
+	w.WriteBits(4, 7)
+	w.WriteBytes([]byte{'\x55', '\x64'})
+	w.WriteBits(8, 189)
 	if buf.Len() != 4 {
 		t.Error("Wrong number of bits and bytes written")
 	}

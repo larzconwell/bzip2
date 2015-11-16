@@ -1,4 +1,4 @@
-package bzip2
+package bwt
 
 import (
 	"math/rand"
@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-func TestBWTransformEven(t *testing.T) {
+func TestTransformEven(t *testing.T) {
 	src := []byte("banana")
 	dst := make([]byte, len(src))
 
-	idx := bwTransform(dst, src)
+	idx := Transform(dst, src)
 	if idx != 3 {
 		t.Error("Value idx is incorrect. Got", idx, "wanted 3")
 	}
@@ -20,11 +20,11 @@ func TestBWTransformEven(t *testing.T) {
 	}
 }
 
-func TestBWTransformOdd(t *testing.T) {
+func TestTransformOdd(t *testing.T) {
 	src := []byte("baanana")
 	dst := make([]byte, len(src))
 
-	idx := bwTransform(dst, src)
+	idx := Transform(dst, src)
 	if idx != 4 {
 		t.Error("Value idx is incorrect. Got", idx, "wanted 4")
 	}
@@ -34,11 +34,11 @@ func TestBWTransformOdd(t *testing.T) {
 	}
 }
 
-func TestBWTransformAfterRLE(t *testing.T) {
+func TestTransformAfterRLE(t *testing.T) {
 	src := []byte("baaaa\x00nana")
 	dst := make([]byte, len(src))
 
-	idx := bwTransform(dst, src)
+	idx := Transform(dst, src)
 	if idx != 7 {
 		t.Error("Value idx is incorrect. Got", idx, "wanted 7")
 	}
@@ -48,7 +48,7 @@ func TestBWTransformAfterRLE(t *testing.T) {
 	}
 }
 
-func BenchmarkBWTransform(b *testing.B) {
+func BenchmarkTransform(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
 
 	src := make([]byte, 100000)
@@ -59,11 +59,11 @@ func BenchmarkBWTransform(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		bwTransform(dst, src)
+		Transform(dst, src)
 	}
 }
 
-func BenchmarkBWTransformLarge(b *testing.B) {
+func BenchmarkTransformLarge(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
 
 	src := make([]byte, 100000*6)
@@ -74,6 +74,6 @@ func BenchmarkBWTransformLarge(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		bwTransform(dst, src)
+		Transform(dst, src)
 	}
 }

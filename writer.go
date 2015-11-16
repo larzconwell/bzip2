@@ -3,6 +3,8 @@ package bzip2
 import (
 	"errors"
 	"io"
+
+	"github.com/larzconwell/bzip2/internal/bits"
 )
 
 const (
@@ -12,34 +14,39 @@ const (
 )
 
 var (
-	// ErrWriteAfterClose occurs when a write occurs after a Writer is closed.
+	// ErrWriteAfterClose occurs when a Write or Flush
+	// occurs after a Writer is closed.
 	ErrWriteAfterClose = errors.New("bzip2: write after close")
 )
 
-// Writer is an io.WriteCloser. Writes to a Writer are compressed and written
-// to the underlying writer.
+// Writer is an io.WriteCloser. Writes to a Writer are
+// compressed and written to the underlying writer.
 type Writer struct {
-	bw          *bitWriter
+	bw          *bits.Writer
 	block       *block
 	crc         uint32
 	wroteHeader bool
 	closed      bool
 }
 
-// NewWriter returns a new Writer. Writes to the returned writer are compressed
-// and written to w.
+// NewWriter returns a new Writer. Writes to the returned
+// writer are compressed and written to w.
 //
-// It is the caller's responsibility to call Close on the WriteCloser when
-// done. Writes may be buffered and not flushed until Close.
+// It is the caller's responsibility to call Close on the
+// WriteCloser when done. Writes may be buffered and not
+// flushed until Close.
 func NewWriter(w io.Writer) *Writer {
-	return &Writer{bw: newBitWriter(w), block: newBlock(6 * baseBlockSize)}
+	return &Writer{
+		bw:    bits.NewWriter(w),
+		block: newBlock(6 * baseBlockSize),
+	}
 }
 
-// NewWriterLevel is like NewWriter except a specific blockSize is given to
-// control the level of compression.
+// NewWriterLevel is like NewWriter except a specific blockSize
+// is given to control the level of compression.
 //
-// The blockSize must be between 1 and 9, any other values are set to the
-// closest valid blockSize.
+// The blockSize must be between 1 and 9, any other values are
+// set to the closest valid blockSize.
 func NewWriterLevel(w io.Writer, blockSize int) *Writer {
 	if blockSize < 1 {
 		blockSize = 1
@@ -48,13 +55,13 @@ func NewWriterLevel(w io.Writer, blockSize int) *Writer {
 	}
 
 	return &Writer{
-		bw:    newBitWriter(w),
+		bw:    bits.NewWriter(w),
 		block: newBlock(blockSize * baseBlockSize),
 	}
 }
 
-// Write writes a compressed form of p to the underlying writer. The writes may
-// be buffered until a Close or Flush.
+// Write writes a compressed form of p to the underlying writer.
+// The writes may be buffered until a Close or Flush.
 func (b *Writer) Write(p []byte) (int, error) {
 	if b.closed {
 		return 0, ErrWriteAfterClose
@@ -81,28 +88,32 @@ func (b *Writer) writeHeader() error {
 	return b.bw.Err()
 }
 
-// write handles the writing of block data and writing completed blocks to
-// underlying writer.
+// write handles the writing of block data and writing
+// completed blocks to the underlying writer.
 func (b *Writer) write(p []byte) (int, error) {
 	n, err := b.block.Write(p)
-	if err == errBlockSizeReached {
-		err = b.writeBlock()
-		if err != nil {
-			return n, err
-		}
+	if err != errBlockSizeReached {
+		return n, err
+	}
 
-		if n != len(p) {
-			var nn int
-			nn, err = b.write(p[n:])
-			n += nn
-		}
+	// Write the completed block, writing left over
+	// bytes to a new block.
+	err = b.writeBlock()
+	if err != nil {
+		return n, err
+	}
+
+	if n != len(p) {
+		var nn int
+		nn, err = b.write(p[n:])
+		n += nn
 	}
 
 	return n, err
 }
 
-// writeBlock writes the current block to the underlying writer, and updates
-// the files crc and total bits wrote.
+// writeBlock writes the current block to the underlying writer
+// and updates the files crc.
 func (b *Writer) writeBlock() error {
 	err := b.block.WriteBlock(b.bw)
 	if err != nil {
@@ -114,8 +125,13 @@ func (b *Writer) writeBlock() error {
 	return nil
 }
 
-// Flush flushes any pending compressed data to the underlying writer.
+// Flush flushes any pending compressed data to the
+// underlying writer.
 func (b *Writer) Flush() error {
+	if b.closed {
+		return ErrWriteAfterClose
+	}
+
 	if b.block.Len() == 0 {
 		return nil
 	}
@@ -123,27 +139,30 @@ func (b *Writer) Flush() error {
 	return b.writeBlock()
 }
 
-// Reset resets the Writers state and makes it equivalent to the result of
-// NewWriter or NewWriterLevel, writing to w.
+// Reset resets the state of the Writer and makes it equivalent
+// to the result of NewWriter or NewWriterLevel writing to w.
 func (b *Writer) Reset(w io.Writer) {
-	b.bw = newBitWriter(w)
+	b.bw = bits.NewWriter(w)
 	b.block = newBlock(b.block.size)
 	b.crc = 0
 	b.wroteHeader = false
 	b.closed = false
 }
 
-// Close closes the Writer, flushing any unwritten data to the underlying
-// writer.
+// Close closes the Writer, flushing any unwritten data
+// to the underlying writer.
 func (b *Writer) Close() error {
 	if b.closed {
 		return nil
 	}
 	b.closed = true
 
-	err := b.Flush()
-	if err != nil {
-		return err
+	// Flush the current block.
+	if b.block.Len() != 0 {
+		err := b.writeBlock()
+		if err != nil {
+			return err
+		}
 	}
 
 	b.bw.WriteBits(48, finalMagic)

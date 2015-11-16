@@ -4,6 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"math"
+
+	"github.com/larzconwell/bzip2/internal/bits"
+	"github.com/larzconwell/bzip2/internal/bwt"
+	"github.com/larzconwell/bzip2/internal/crc32"
+	"github.com/larzconwell/bzip2/internal/huffman"
+	"github.com/larzconwell/bzip2/internal/mtf"
+	"github.com/larzconwell/bzip2/internal/rle"
+	"github.com/larzconwell/bzip2/internal/rle2"
+	"github.com/larzconwell/bzip2/internal/symbols"
 )
 
 const (
@@ -35,23 +44,20 @@ func (b block) Len() int {
 // only the bytes that can fit will be written and errBlockSizeReached is
 // returned.
 func (b *block) Write(p []byte) (int, error) {
-	exceedsSize := false
-
 	// Do the initial RLE step on demand since RLE can actually make p grow.
 	// This ensures that the buffer doesn't end up more than b.size
 	// afterwards.
-	encoded := rlEncode(p)
+	encoded := rle.Encode(p)
 	if b.buf.Len()+len(encoded) > b.size {
-		exceedsSize = true
 		encoded = encoded[:b.size-b.buf.Len()]
 	}
 
 	n, err := b.buf.Write(encoded)
-	p = p[:rlIndexOf(n-1, encoded)+1]
+	p = p[:rle.IndexOf(n-1, encoded)+1]
 	if err == nil {
-		b.crc = crcUpdate(b.crc, p)
+		b.crc = crc32.Update(b.crc, p)
 
-		if exceedsSize || b.buf.Len() == b.size {
+		if b.buf.Len() == b.size {
 			err = errBlockSizeReached
 		}
 	}
@@ -61,85 +67,112 @@ func (b *block) Write(p []byte) (int, error) {
 
 // WriteBlock compresses the content buffered and writes a block to the bit
 // writer given.
-func (b *block) WriteBlock(bw *bitWriter) error {
+func (b *block) WriteBlock(bw *bits.Writer) error {
 	data := b.buf.Bytes()
-	symbols, reducedSymbols := symbolSet(data)
-
-	// Generate the bitmaps for the used symbols.
-	symbolRangeUsedBitmap := 0
-	symbolRanges := make([]int, 16)
-	for i, symRange := range symbolRanges {
-		// Toggle the bits for the 16 symbols in the range.
-		for j := 0; j < 16; j++ {
-			symRange = (symRange << 1) + symbols[16*i+j]
-		}
-		symbolRanges[i] = symRange
-
-		// Toggle the bit for the range in the bitmap.
-		rangePresent := 0
-		if symRange > 0 {
-			rangePresent = 1
-		}
-		symbolRangeUsedBitmap = (symbolRangeUsedBitmap << 1) + rangePresent
-	}
+	syms, reducedSyms := symbols.Get(data)
 
 	// BWT step.
-	bwt := make([]byte, len(data))
-	bwtidx := bwTransform(bwt, data)
+	bwtData := make([]byte, len(data))
+	bwtidx := bwt.Transform(bwtData, data)
 
 	// MTF step.
-	mtf := bwt
-	mtfTransform(reducedSymbols, mtf, bwt)
+	mtfData := bwtData
+	mtf.Transform(reducedSyms, mtfData, bwtData)
 
 	// RLE2 step.
-	rle := rl2Encode(reducedSymbols, mtf)
-	freq := symbolFrequencies(reducedSymbols, rle)
+	rleData := rle2.Encode(reducedSyms, mtfData)
+	freqs := rle2.GetFrequencies(reducedSyms, rleData)
 
 	// Setup the huffman trees required to encode rle.
-	huffmanTrees, treeIndexes := generateHuffmanTrees(freq, rle)
+	trees, selections := huffman.GenerateTrees(freqs, rleData)
 
-	// Get the MTF encoded huffman tree indexes.
-	treeIndexesSymbols := make([]byte, len(huffmanTrees))
-	for i := range huffmanTrees {
-		treeIndexesSymbols[i] = byte(i)
+	// Get the MTF encoded huffman tree selections.
+	treeSelectionSymbols := make(symbols.ReducedSet, len(trees))
+	for i := range trees {
+		treeSelectionSymbols[i] = byte(i)
 	}
-	treeIndexesBytes := make([]byte, len(treeIndexes))
-	for i, idx := range treeIndexes {
-		treeIndexesBytes[i] = byte(idx)
+	treeSelectionBytes := make([]byte, len(selections))
+	for i, selection := range selections {
+		treeSelectionBytes[i] = byte(selection)
 	}
-	mtfTransform(treeIndexesSymbols, treeIndexesBytes, treeIndexesBytes)
+	mtf.Transform(treeSelectionSymbols, treeSelectionBytes, treeSelectionBytes)
 
 	// Write the block header.
 	bw.WriteBits(48, blockMagic)
 	bw.WriteBits(32, uint64(b.crc))
 	bw.WriteBits(1, 0)
 
-	// Write the BWT index.
+	// Write the contents that build the decoding steps.
 	bw.WriteBits(24, uint64(bwtidx))
+	b.writeSymbolBitmaps(bw, syms)
+	bw.WriteBits(3, uint64(len(trees)))
+	bw.WriteBits(15, uint64(len(selections)))
+	b.writeTreeSelections(bw, treeSelectionBytes)
+	b.writeTreeCodes(bw, trees)
 
-	// Write the symbol bitmaps.
-	bw.WriteBits(16, uint64(symbolRangeUsedBitmap))
-	for _, symRange := range symbolRanges {
-		if symRange > 0 {
-			bw.WriteBits(16, uint64(symRange))
+	// Write the encoded contents, using the huffman trees generated
+	// switching them out every 50 symbols.
+	encoded := 0
+	idx := 0
+	tree := trees[selections[idx]]
+	for _, b := range rleData {
+		if encoded == huffman.TreeSelectionLimit {
+			encoded = 0
+			idx++
+			tree = trees[selections[idx]]
 		}
+		code := tree.Codes[b]
+
+		bw.WriteBits(uint(code.Len()), code.Bits)
+		encoded++
 	}
 
-	// Write the huffman tree numbers.
-	bw.WriteBits(3, uint64(len(huffmanTrees)))
-	bw.WriteBits(15, uint64(len(treeIndexes)))
+	return bw.Err()
+}
 
-	// Write the huffman tree indexes in unary encoding.
-	for _, idx := range treeIndexesBytes {
-		for i := byte(0); i < idx; i++ {
+// writeSymbolBitmaps writes the bitmaps for the used symbols.
+func (b *block) writeSymbolBitmaps(bw *bits.Writer, syms symbols.Set) {
+	rangesUsed := 0
+	ranges := make([]int, 16)
+
+	for i, r := range ranges {
+		// Toggle the bits for the 16 symbols in the range.
+		for j := 0; j < 16; j++ {
+			r = (r << 1) | syms[16*i+j]
+		}
+		ranges[i] = r
+
+		// Toggle the bit for the range in the bitmap.
+		present := 0
+		if r > 0 {
+			present = 1
+		}
+		rangesUsed = (rangesUsed << 1) | present
+	}
+
+	bw.WriteBits(16, uint64(rangesUsed))
+	for _, r := range ranges {
+		if r > 0 {
+			bw.WriteBits(16, uint64(r))
+		}
+	}
+}
+
+// writeTreeSelections writes the huffman tree selections in unary encoding.
+func (b *block) writeTreeSelections(bw *bits.Writer, selections []byte) {
+	for _, selection := range selections {
+		for i := byte(0); i < selection; i++ {
 			bw.WriteBits(1, 1)
 		}
 
 		bw.WriteBits(1, 0)
 	}
+}
 
-	// Write the delta encoded code-lengths for the huffman trees codes.
-	for _, tree := range huffmanTrees {
+// writeTreeCodes writes the delta encoded code-lengths for
+// the huffman trees codes.
+func (b *block) writeTreeCodes(bw *bits.Writer, trees []*huffman.Tree) {
+	for _, tree := range trees {
 		// Get the smallest code-length in the huffman tree.
 		length := 0
 		for i, code := range tree.Codes {
@@ -149,7 +182,7 @@ func (b *block) WriteBlock(bw *bitWriter) error {
 		}
 		bw.WriteBits(5, uint64(length))
 
-		// Write the code-lengths as modifications to the base length.
+		// Write the code-lengths as modifications to the current length.
 		for _, code := range tree.Codes {
 			delta := int(math.Abs(float64(length - code.Len())))
 
@@ -167,43 +200,4 @@ func (b *block) WriteBlock(bw *bitWriter) error {
 			bw.WriteBits(1, 0)
 		}
 	}
-
-	// Write the encoded contents, using the huffman trees generated
-	// switching them out every 50 symbols.
-	decoded := 0
-	treeIndex := 0
-	huffmanTree := huffmanTrees[treeIndexes[treeIndex]]
-	for _, b := range rle {
-		if decoded == 50 {
-			decoded = 0
-			treeIndex++
-			huffmanTree = huffmanTrees[treeIndexes[treeIndex]]
-		}
-		code := huffmanTree.Codes[b]
-
-		bw.WriteBits(uint(code.Len()), code.Bits)
-		decoded++
-	}
-
-	return bw.Err()
-}
-
-// symbolSet gets the symbol set for a slice of bytes. Int is used instead
-// of bool to simplify the symbol bitmap code. The reduced list of symbols
-// used is also returned.
-func symbolSet(data []byte) ([256]int, []byte) {
-	var symbols [256]int
-	reduced := make([]byte, 0, 256)
-
-	for _, b := range data {
-		symbols[b] = 1
-	}
-
-	for i, present := range symbols {
-		if present > 0 {
-			reduced = append(reduced, byte(i))
-		}
-	}
-
-	return symbols, reduced
 }

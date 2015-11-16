@@ -68,16 +68,3 @@ func TestBlockOverWrite(t *testing.T) {
 			"wanted", block.size)
 	}
 }
-
-func TestSymbolSet(t *testing.T) {
-	symbols, reducedSymbols := symbolSet([]byte("banana"))
-	if string(reducedSymbols) != "abn" {
-		t.Error("The reduced symbol set doesn't include the correct bytes")
-	}
-
-	for i, present := range symbols {
-		if present > 1 && (i != 'a' || i != 'b' || i != 'n') {
-			t.Error("Symbol set includes a byte that should be set")
-		}
-	}
-}
