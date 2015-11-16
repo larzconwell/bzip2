@@ -1,22 +1,17 @@
 package huffman
 
 import (
-	"math"
-
 	"github.com/larzconwell/bzip2/internal/rle2"
 )
 
 // TreeSelectionLimit is the symbol limit for each tree selection.
 const TreeSelectionLimit = 50
 
-// GenerateTrees generates the trees required to encode the data, and
+// GenerateTrees creates the trees required to encode the data, and
 // which tree to use for each 50 symbol block of data in src.
 func GenerateTrees(freqs rle2.Frequencies, src []uint16) ([]*Tree, []int) {
 	// Get the number of huffman tree selections.
-	numSelections := 1
-	if len(src) > TreeSelectionLimit {
-		numSelections = int(math.Ceil(float64(len(src)) / TreeSelectionLimit))
-	}
+	numSelections := (len(src) + TreeSelectionLimit - 1) / TreeSelectionLimit
 
 	// Get the number of trees to use.
 	numTrees := 2

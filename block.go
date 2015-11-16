@@ -123,7 +123,7 @@ func (b *block) WriteBlock(bw *bits.Writer) error {
 		}
 		code := tree.Codes[b]
 
-		bw.WriteBits(uint(code.Len()), code.Bits)
+		bw.WriteBits(uint(code.Len), code.Bits)
 		encoded++
 	}
 
@@ -174,24 +174,24 @@ func (b *block) writeTreeSelections(bw *bits.Writer, selections []byte) {
 func (b *block) writeTreeCodes(bw *bits.Writer, trees []*huffman.Tree) {
 	for _, tree := range trees {
 		// Get the smallest code-length in the huffman tree.
-		length := 0
+		codelen := 0
 		for i, code := range tree.Codes {
-			if i == 0 || code.Len() < length {
-				length = code.Len()
+			if i == 0 || code.Len < codelen {
+				codelen = code.Len
 			}
 		}
-		bw.WriteBits(5, uint64(length))
+		bw.WriteBits(5, uint64(codelen))
 
 		// Write the code-lengths as modifications to the current length.
 		for _, code := range tree.Codes {
-			delta := int(math.Abs(float64(length - code.Len())))
+			delta := int(math.Abs(float64(codelen - code.Len)))
 
 			// 2 is increment, 3 is decrement.
 			op := uint64(2)
-			if length > code.Len() {
+			if codelen > code.Len {
 				op = 3
 			}
-			length = code.Len()
+			codelen = code.Len
 
 			for i := 0; i < delta; i++ {
 				bw.WriteBits(2, op)
