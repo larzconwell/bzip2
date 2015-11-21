@@ -44,12 +44,29 @@ func (b block) Len() int {
 // only the bytes that can fit will be written and errBlockSizeReached is
 // returned.
 func (b *block) Write(p []byte) (int, error) {
+	blockSizeReached := false
+
 	// Do the initial RLE step on demand since RLE can actually make p grow.
 	// This ensures that the buffer doesn't end up more than b.size
 	// afterwards.
 	encoded := rle.Encode(p)
 	if b.buf.Len()+len(encoded) > b.size {
 		encoded = encoded[:b.size-b.buf.Len()]
+
+		// If the last 4 bytes are a repeat then a repeat
+		// byte was stripped off leaving invalid RLE data.
+		// To combat this just strip an extra character
+		// off letting it get written to another block.
+		if len(encoded) >= 4 {
+			idx := len(encoded) - 4
+			b := encoded[idx]
+			data := []byte{b, b, b, b}
+
+			if string(encoded[idx:]) == string(data) {
+				encoded = encoded[:idx+3]
+				blockSizeReached = true
+			}
+		}
 	}
 
 	n, err := b.buf.Write(encoded)
@@ -57,7 +74,7 @@ func (b *block) Write(p []byte) (int, error) {
 	if err == nil {
 		b.crc = crc32.Update(b.crc, p)
 
-		if b.buf.Len() == b.size {
+		if b.buf.Len() == b.size || (n == len(encoded) && blockSizeReached) {
 			err = errBlockSizeReached
 		}
 	}

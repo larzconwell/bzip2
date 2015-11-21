@@ -43,6 +43,7 @@ func NewTree(freqs rle2.Frequencies) *Tree {
 }
 
 // getCodes finds the codes for the frequencies.
+// TODO: Codes cannot be longer than 20 bits long
 func (t Tree) getCodes(node *Node, n int, bits uint64) {
 	if node.Leaf() {
 		t.Codes[node.Value] = &Code{Len: n, Bits: bits}
