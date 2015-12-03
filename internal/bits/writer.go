@@ -1,14 +1,7 @@
 package bits
 
 import (
-	"errors"
 	"io"
-)
-
-var (
-	// ErrWriteBufferedBits occurs if you try to write bytes while
-	// there are still bits buffered.
-	ErrWriteBufferedBits = errors.New("bits: WriteBytes with buffered bits")
 )
 
 // Writer wraps an io.Writer and provides the ability to write
@@ -25,24 +18,6 @@ type Writer struct {
 // NewWriter creates a bit writer writing to w.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{w: w}
-}
-
-// WriteBytes writes bytes to the writer.
-//
-// If there are any pending bits in the buffer it is an error
-// to write bytes.
-func (w *Writer) WriteBytes(b []byte) {
-	if w.err != nil {
-		return
-	}
-
-	if w.n != 0 {
-		w.err = ErrWriteBufferedBits
-		return
-	}
-
-	_, w.err = w.w.Write(b)
-	return
 }
 
 // WriteBits writes n bits to the writer, if n is less than a byte
