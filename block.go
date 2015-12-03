@@ -16,14 +16,17 @@ import (
 )
 
 const (
-	blockMagic = 0x314159265359 // pi
+	// blockMagic signifies the beginning of a new block.
+	blockMagic = 0x314159265359
 )
 
 var (
+	// errBlockSizeReached occurs when the end of
+	// a block has been reached.
 	errBlockSizeReached = errors.New("bzip2: Block size reached")
 )
 
-// block handles the compression of data for a single block of a given size.
+// block handles the compression of data up to a set size.
 type block struct {
 	buf  *bytes.Buffer
 	size int
@@ -40,16 +43,35 @@ func (b block) Len() int {
 	return b.buf.Len()
 }
 
-// Write writes p to the blocks buffer. If writing p exceeds the blocks size
-// only the bytes that can fit will be written and errBlockSizeReached is
-// returned.
+// Write writes p to the block. If writing p exceeds the blocks size
+// only the bytes that can fit will be written and errBlockSizeReached
+// is returned.
 func (b *block) Write(p []byte) (int, error) {
-	// Do the initial RLE step on demand since RLE can actually make p grow.
+	blockSizeReached := false
+
+	// Do the initial RLE step on demand since RLE can make p grow.
 	// This ensures that the buffer doesn't end up more than b.size
 	// afterwards.
 	encoded := rle.Encode(p)
-	if b.buf.Len()+len(encoded) > b.size {
+	total := b.buf.Len() + len(encoded)
+	if total > b.size {
 		encoded = encoded[:b.size-b.buf.Len()]
+		total = b.size
+	}
+
+	// If the last 4 bytes are a repeat then a repeat
+	// byte was stripped off leaving invalid RLE data.
+	// To combat this just strip an extra character
+	// off letting it get written to another block.
+	if total == b.size && len(encoded) >= 4 {
+		idx := len(encoded) - 4
+		b := encoded[idx]
+		data := []byte{b, b, b, b}
+
+		if string(encoded[idx:]) == string(data) {
+			encoded = encoded[:idx+3]
+			blockSizeReached = true
+		}
 	}
 
 	n, err := b.buf.Write(encoded)
@@ -57,7 +79,7 @@ func (b *block) Write(p []byte) (int, error) {
 	if err == nil {
 		b.crc = crc32.Update(b.crc, p)
 
-		if b.buf.Len() == b.size {
+		if b.buf.Len() == b.size || (n == len(encoded) && blockSizeReached) {
 			err = errBlockSizeReached
 		}
 	}
@@ -65,8 +87,8 @@ func (b *block) Write(p []byte) (int, error) {
 	return len(p), err
 }
 
-// WriteBlock compresses the content buffered and writes a block to the bit
-// writer given.
+// WriteBlock compresses the content buffered and writes
+// a block to the bit writer given.
 func (b *block) WriteBlock(bw *bits.Writer) error {
 	data := b.buf.Bytes()
 	syms, reducedSyms := symbols.Get(data)
@@ -83,7 +105,7 @@ func (b *block) WriteBlock(bw *bits.Writer) error {
 	rleData := rle2.Encode(reducedSyms, mtfData)
 	freqs := rle2.GetFrequencies(reducedSyms, rleData)
 
-	// Setup the huffman trees required to encode rle.
+	// Setup the huffman trees required to encode rleData.
 	trees, selections := huffman.GenerateTrees(freqs, rleData)
 
 	// Get the MTF encoded huffman tree selections.
@@ -123,7 +145,7 @@ func (b *block) WriteBlock(bw *bits.Writer) error {
 		}
 		code := tree.Codes[b]
 
-		bw.WriteBits(uint(code.Len()), code.Bits)
+		bw.WriteBits(uint(code.Len), code.Bits)
 		encoded++
 	}
 
@@ -174,24 +196,24 @@ func (b *block) writeTreeSelections(bw *bits.Writer, selections []byte) {
 func (b *block) writeTreeCodes(bw *bits.Writer, trees []*huffman.Tree) {
 	for _, tree := range trees {
 		// Get the smallest code-length in the huffman tree.
-		length := 0
+		codelen := 0
 		for i, code := range tree.Codes {
-			if i == 0 || code.Len() < length {
-				length = code.Len()
+			if i == 0 || code.Len < codelen {
+				codelen = code.Len
 			}
 		}
-		bw.WriteBits(5, uint64(length))
+		bw.WriteBits(5, uint64(codelen))
 
 		// Write the code-lengths as modifications to the current length.
 		for _, code := range tree.Codes {
-			delta := int(math.Abs(float64(length - code.Len())))
+			delta := int(math.Abs(float64(codelen - code.Len)))
 
 			// 2 is increment, 3 is decrement.
 			op := uint64(2)
-			if length > code.Len() {
+			if codelen > code.Len {
 				op = 3
 			}
-			length = code.Len()
+			codelen = code.Len
 
 			for i := 0; i < delta; i++ {
 				bw.WriteBits(2, op)
