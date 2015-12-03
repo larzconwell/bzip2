@@ -4,20 +4,6 @@ import (
 	"testing"
 )
 
-// noRunData produces data to write with no runs in it.
-func noRunData(size int) []byte {
-	data := make([]byte, size)
-	b := byte('\x00')
-
-	for i := range data {
-		data[i] = b
-
-		b++
-	}
-
-	return data
-}
-
 func TestBlockFullWrite(t *testing.T) {
 	block := newBlock(1000)
 

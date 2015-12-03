@@ -13,8 +13,8 @@ Hopefully this will be eventually merged into the standard library without any c
 
 References used to write the compressor since there's no specification:
 - https://en.wikipedia.org/wiki/Bzip2
-- https://github.com/cscott/compressjs
-- https://code.google.com/p/jbzip2/source/browse/trunk/jbzip2/src/org/itadaki/bzip2
+- https://bzip.org
+- https://code.google.com/p/jbzip2
 - http://lbzip2.org/
 
 ### Install

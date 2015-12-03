@@ -16,14 +16,17 @@ import (
 )
 
 const (
-	blockMagic = 0x314159265359 // pi
+	// blockMagic signifies the beginning of a new block.
+	blockMagic = 0x314159265359
 )
 
 var (
+	// errBlockSizeReached occurs when the end of
+	// a block has been reached.
 	errBlockSizeReached = errors.New("bzip2: Block size reached")
 )
 
-// block handles the compression of data for a single block of a given size.
+// block handles the compression of data up to a set size.
 type block struct {
 	buf  *bytes.Buffer
 	size int
@@ -40,32 +43,34 @@ func (b block) Len() int {
 	return b.buf.Len()
 }
 
-// Write writes p to the blocks buffer. If writing p exceeds the blocks size
-// only the bytes that can fit will be written and errBlockSizeReached is
-// returned.
+// Write writes p to the block. If writing p exceeds the blocks size
+// only the bytes that can fit will be written and errBlockSizeReached
+// is returned.
 func (b *block) Write(p []byte) (int, error) {
 	blockSizeReached := false
 
-	// Do the initial RLE step on demand since RLE can actually make p grow.
+	// Do the initial RLE step on demand since RLE can make p grow.
 	// This ensures that the buffer doesn't end up more than b.size
 	// afterwards.
 	encoded := rle.Encode(p)
-	if b.buf.Len()+len(encoded) > b.size {
+	total := b.buf.Len() + len(encoded)
+	if total > b.size {
 		encoded = encoded[:b.size-b.buf.Len()]
+		total = b.size
+	}
 
-		// If the last 4 bytes are a repeat then a repeat
-		// byte was stripped off leaving invalid RLE data.
-		// To combat this just strip an extra character
-		// off letting it get written to another block.
-		if len(encoded) >= 4 {
-			idx := len(encoded) - 4
-			b := encoded[idx]
-			data := []byte{b, b, b, b}
+	// If the last 4 bytes are a repeat then a repeat
+	// byte was stripped off leaving invalid RLE data.
+	// To combat this just strip an extra character
+	// off letting it get written to another block.
+	if total == b.size && len(encoded) >= 4 {
+		idx := len(encoded) - 4
+		b := encoded[idx]
+		data := []byte{b, b, b, b}
 
-			if string(encoded[idx:]) == string(data) {
-				encoded = encoded[:idx+3]
-				blockSizeReached = true
-			}
+		if string(encoded[idx:]) == string(data) {
+			encoded = encoded[:idx+3]
+			blockSizeReached = true
 		}
 	}
 
@@ -82,8 +87,8 @@ func (b *block) Write(p []byte) (int, error) {
 	return len(p), err
 }
 
-// WriteBlock compresses the content buffered and writes a block to the bit
-// writer given.
+// WriteBlock compresses the content buffered and writes
+// a block to the bit writer given.
 func (b *block) WriteBlock(bw *bits.Writer) error {
 	data := b.buf.Bytes()
 	syms, reducedSyms := symbols.Get(data)
@@ -100,7 +105,7 @@ func (b *block) WriteBlock(bw *bits.Writer) error {
 	rleData := rle2.Encode(reducedSyms, mtfData)
 	freqs := rle2.GetFrequencies(reducedSyms, rleData)
 
-	// Setup the huffman trees required to encode rle.
+	// Setup the huffman trees required to encode rleData.
 	trees, selections := huffman.GenerateTrees(freqs, rleData)
 
 	// Get the MTF encoded huffman tree selections.
