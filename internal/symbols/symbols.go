@@ -3,7 +3,7 @@ package symbols
 // Set contains all possible bytes and if they've been set.
 type Set [256]int
 
-// ReducedSet contains all bytes that are set.
+// ReducedSet contains all bytes that are set in order.
 type ReducedSet []byte
 
 // Get gets the symbol set for a slice of bytes.
