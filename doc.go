@@ -1,2 +1,2 @@
-// Package bzip2 implements compression and decompression of bzip2 data.
+// Package bzip2 implements reading and writing of bzip2 format compressed files.
 package bzip2
