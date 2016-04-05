@@ -10,35 +10,6 @@ import (
 	"github.com/larzconwell/bzip2/internal/testhelpers"
 )
 
-func TestWriteAfterClose(t *testing.T) {
-	var buf bytes.Buffer
-	writer := NewWriter(&buf)
-	err := writer.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = writer.Write([]byte{})
-	if err != nil && err != ErrWriteAfterClose {
-		t.Fatal(err)
-	}
-
-	if err == nil {
-		t.Error("Write after closing should error but didn't")
-	}
-
-	// Minimally test reset.
-	writer.Reset(&buf)
-	_, err = writer.Write([]byte{})
-	if err != nil && err != ErrWriteAfterClose {
-		t.Fatal(err)
-	}
-
-	if err != nil {
-		t.Error("Write after reset shouldn't return ErrWriterAfterClose but did")
-	}
-}
-
 func TestEmptyValid(t *testing.T) {
 	var buf bytes.Buffer
 	writer := NewWriter(&buf)
@@ -88,7 +59,7 @@ func TestFilledBlock(t *testing.T) {
 	var out bytes.Buffer
 	expected := testhelpers.RandomRunData(baseBlockSize)
 
-	writer := NewWriterLevel(&buf, 1)
+	writer, _ := NewWriterLevel(&buf, 1)
 	_, err := writer.Write(expected)
 	if err == nil {
 		err = writer.Close()
@@ -113,7 +84,7 @@ func TestFilledNoRunsBlock(t *testing.T) {
 	var out bytes.Buffer
 	expected := testhelpers.NoRunData(baseBlockSize)
 
-	writer := NewWriterLevel(&buf, 1)
+	writer, _ := NewWriterLevel(&buf, 1)
 	_, err := writer.Write(expected)
 	if err == nil {
 		err = writer.Close()
@@ -138,7 +109,7 @@ func TestMultiBlock(t *testing.T) {
 	var out bytes.Buffer
 	expected := testhelpers.RandomRunData(2 * baseBlockSize)
 
-	writer := NewWriterLevel(&buf, 1)
+	writer, _ := NewWriterLevel(&buf, 1)
 	_, err := writer.Write(expected)
 	if err == nil {
 		err = writer.Close()
