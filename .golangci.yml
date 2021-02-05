@@ -1,0 +1,35 @@
+run:
+    tests: false
+
+linters:
+    disable-all: true
+    enable:
+        - govet
+        - errcheck
+        - staticcheck
+        - unused
+        - gosimple
+        - structcheck
+        - varcheck
+        - ineffassign
+        - deadcode
+        - typecheck
+        - golint
+        - rowserrcheck
+        - gosec
+        - interfacer
+        - unconvert
+        - goimports
+        - maligned
+        - unparam
+        - nakedret
+        - prealloc
+        - scopelint
+        - gochecknoinits
+        - gochecknoglobals
+        - goprintffuncname
+        - dogsled
+        - errorlint
+        - godot
+        - nestif
+        - exportloopref
