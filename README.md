@@ -7,6 +7,12 @@
 
 Package `bzip2` implements reading and writing of compressed files using the bzip2 format.
 
+### Install
+
+```
+go get github.com/larzconwell/bzip2
+```
+
 ### Notes
 
 References used to write the writer since there's no specification:
@@ -14,9 +20,3 @@ References used to write the writer since there's no specification:
 - https://bzip.org
 - https://code.google.com/p/jbzip2
 - http://lbzip2.org/
-
-### Install
-
-```
-go get github.com/larzconwell/bzip2
-```
