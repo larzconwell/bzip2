@@ -99,17 +99,3 @@ func TestWriterWrite(t *testing.T) {
 		t.Parallel()
 	})
 }
-
-func TestFuzzWriter(t *testing.T) {
-	t.Run("reading with the bzip2 binary", func(t *testing.T) {
-		t.Parallel()
-	})
-
-	t.Run("reading with the Go stdlib bzip2 package", func(t *testing.T) {
-		t.Parallel()
-	})
-
-	t.Run("reading with Reader", func(t *testing.T) {
-		t.Parallel()
-	})
-}
