@@ -39,6 +39,10 @@ func TestWriterErr(t *testing.T) {
 		t.Parallel()
 	})
 
+	t.Run("writer has been closed", func(t *testing.T) {
+		t.Parallel()
+	})
+
 	t.Run("error occurred during Write", func(t *testing.T) {
 		t.Parallel()
 	})
@@ -57,6 +61,10 @@ func TestWriterClose(t *testing.T) {
 		t.Parallel()
 	})
 
+	t.Run("writer has been closed", func(t *testing.T) {
+		t.Parallel()
+	})
+
 	t.Run("with no data written", func(t *testing.T) {
 		t.Parallel()
 	})
@@ -72,6 +80,10 @@ func TestWriterClose(t *testing.T) {
 
 func TestWriterWrite(t *testing.T) {
 	t.Run("writer has errored previously", func(t *testing.T) {
+		t.Parallel()
+	})
+
+	t.Run("writer has been closed", func(t *testing.T) {
 		t.Parallel()
 	})
 
