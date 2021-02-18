@@ -122,7 +122,7 @@ func (w *Writer) writeHeader() error {
 
 	// Header is written in ascii.
 	w.bw.Write(beginStreamMagic, 16)
-	w.bw.Write('h', 8)
+	w.bw.Write(version, 8)
 	w.bw.Write(uint64('0'+w.blockSize/baseBlockSize), 8)
 
 	return w.bw.Err()
