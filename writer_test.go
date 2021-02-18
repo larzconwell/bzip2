@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// TODO: Add Writer tests
+
 func TestNewWriter(t *testing.T) {
 	t.Parallel()
 }
@@ -39,7 +41,7 @@ func TestWriterErr(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("writer has been closed", func(t *testing.T) {
+	t.Run("Writer has been closed", func(t *testing.T) {
 		t.Parallel()
 	})
 
@@ -57,11 +59,11 @@ func TestWriterReset(t *testing.T) {
 }
 
 func TestWriterClose(t *testing.T) {
-	t.Run("writer has errored previously", func(t *testing.T) {
+	t.Run("Writer has errored previously", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("writer has been closed", func(t *testing.T) {
+	t.Run("Writer has been closed", func(t *testing.T) {
 		t.Parallel()
 	})
 
@@ -69,45 +71,41 @@ func TestWriterClose(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("with an incomplete block", func(t *testing.T) {
-		t.Parallel()
-	})
-
-	t.Run("with a completed block", func(t *testing.T) {
+	t.Run("with an unfilled block", func(t *testing.T) {
 		t.Parallel()
 	})
 }
 
 func TestWriterWrite(t *testing.T) {
-	t.Run("writer has errored previously", func(t *testing.T) {
+	t.Run("Writer has errored previously", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("writer has been closed", func(t *testing.T) {
+	t.Run("Writer has been closed", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("with an empty writer less than a block of data is written", func(t *testing.T) {
+	t.Run("with an empty Writer less than a block of data is written", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("with some data in the writer enough data is written to fill a block of data", func(t *testing.T) {
+	t.Run("with some data in the Writer enough data is written to fill a block of data", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("with some data in the writer enough data is written to fill a block of data with left over", func(t *testing.T) {
+	t.Run("with some data in the Writer enough data is written to fill a block of data with left over", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("with an empty writer enough data is written to fill a block of data", func(t *testing.T) {
+	t.Run("with an empty Writer enough data is written to fill a block of data", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("with an empty writer enough data is written to fill a block of data with left over", func(t *testing.T) {
+	t.Run("with an empty Writer enough data is written to fill a block of data with left over", func(t *testing.T) {
 		t.Parallel()
 	})
 
-	t.Run("with an empty writer enough data is written to fill multiple blocks of data", func(t *testing.T) {
+	t.Run("with an empty Writer enough data is written to fill multiple blocks of data", func(t *testing.T) {
 		t.Parallel()
 	})
 }

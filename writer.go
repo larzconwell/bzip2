@@ -65,7 +65,7 @@ func (w *Writer) Err() error {
 	return w.err
 }
 
-// Reset discards any state and switches writing to the provided writer.
+// Reset discards any state and switches writing to the provided io.Writer.
 func (w *Writer) Reset(writer io.Writer) {
 	w.bw.Reset(writer)
 	w.checksum = 0
@@ -99,8 +99,8 @@ func (w *Writer) Close() error {
 	return nil
 }
 
-// Write writes the compressed form of data to the writer,
-// which may be buffered until the caller closes the writer.
+// Write writes the compressed form of data to the Writer,
+// which may be buffered until the caller closes the Writer.
 func (w *Writer) Write(data []byte) (int, error) {
 	if w.err != nil {
 		return 0, w.err

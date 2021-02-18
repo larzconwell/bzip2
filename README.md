@@ -15,7 +15,7 @@ go get github.com/larzconwell/bzip2
 
 ### Notes
 
-References used to write the writer since there's no specification:
+References used to write the implementation since there's no specification:
 - https://en.wikipedia.org/wiki/Bzip2
 - https://bzip.org
 - https://code.google.com/p/jbzip2
