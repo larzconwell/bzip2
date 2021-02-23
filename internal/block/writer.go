@@ -4,10 +4,6 @@ import (
 	"github.com/larzconwell/buffbits"
 )
 
-const (
-	baseSize = 100_000
-)
-
 // Writer is an io.WriteCloser that handles writing compressed block data to an underlying
 // bit writer up to a set size. If an error occurs while writing to a Writer, no more data
 // will be written and all subsequent calls with return an error. The caller should call
@@ -19,9 +15,9 @@ type Writer struct {
 	err      error
 }
 
-// NewWriter creates a Writer that compresses and writes to bw up to level * 100k bytes.
+// NewWriter creates a Writer that compresses and writes to bw up to level * BaseSize bytes.
 func NewWriter(bw *buffbits.Writer, level int) *Writer {
-	return &Writer{bw: bw, size: level * baseSize}
+	return &Writer{bw: bw, size: level * BaseSize}
 }
 
 // Err returns the first error that was encountered by the Writer.
