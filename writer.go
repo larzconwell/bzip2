@@ -2,9 +2,12 @@ package bzip2
 
 import (
 	"compress/flate"
+	"errors"
 	"io"
 
 	"github.com/larzconwell/buffbits"
+	"github.com/larzconwell/bzip2/internal/block"
+	"github.com/larzconwell/bzip2/internal/crc32"
 )
 
 // These constants are copied from the flate package, so that
@@ -16,8 +19,7 @@ const (
 )
 
 const (
-	defaultLevel  = 6
-	baseBlockSize = 100_000
+	defaultLevel = 6
 )
 
 // Writer is an io.WriteCloser that compresses and writes data to an underlying io.Writer.
@@ -26,17 +28,22 @@ const (
 // flush any pending data.
 type Writer struct {
 	bw          *buffbits.Writer
+	block       *block.Writer
+	level       int
 	checksum    uint32
-	blockSize   int
 	wroteHeader bool
 	err         error
 }
 
 // NewWriter creates a Writer that compresses and writes to w.
 func NewWriter(w io.Writer) *Writer {
+	bw := buffbits.NewWriter(w)
+	level := defaultLevel
+
 	return &Writer{
-		bw:        buffbits.NewWriter(w),
-		blockSize: defaultLevel * baseBlockSize,
+		bw:    bw,
+		block: block.NewWriter(bw, level),
+		level: level,
 	}
 }
 
@@ -46,28 +53,35 @@ func NewWriter(w io.Writer) *Writer {
 // Valid compression levels are DefaultCompression or any integer between
 // BestSpeed and BestCompression inclusively.
 func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
-	if level != DefaultCompression && level < BestSpeed || level > BestCompression {
+	if level != DefaultCompression && (level < BestSpeed || level > BestCompression) {
 		return nil, ErrInvalidCompressionLevel
 	}
 
 	if level == DefaultCompression {
 		level = defaultLevel
 	}
+	bw := buffbits.NewWriter(w)
 
 	return &Writer{
-		bw:        buffbits.NewWriter(w),
-		blockSize: level * baseBlockSize,
+		bw:    bw,
+		block: block.NewWriter(bw, level),
+		level: level,
 	}, nil
 }
 
 // Err returns the first error that was encountered by the Writer.
 func (w *Writer) Err() error {
+	if w.err == ErrClosed {
+		return nil
+	}
+
 	return w.err
 }
 
 // Reset discards any state and switches writing to the provided io.Writer.
 func (w *Writer) Reset(writer io.Writer) {
 	w.bw.Reset(writer)
+	w.block.Reset(w.bw)
 	w.checksum = 0
 	w.wroteHeader = false
 	w.err = nil
@@ -83,6 +97,13 @@ func (w *Writer) Close() error {
 	w.err = w.writeHeader()
 	if w.err != nil {
 		return w.err
+	}
+
+	if w.block.Len() != 0 {
+		w.err = w.writeBlock()
+		if w.err != nil {
+			return w.err
+		}
 	}
 
 	w.err = w.writeFooter()
@@ -111,7 +132,9 @@ func (w *Writer) Write(data []byte) (int, error) {
 		return 0, w.err
 	}
 
-	return len(data), nil
+	var n int
+	n, w.err = w.write(data)
+	return n, w.err
 }
 
 func (w *Writer) writeHeader() error {
@@ -123,7 +146,7 @@ func (w *Writer) writeHeader() error {
 	// Header is written in ascii.
 	w.bw.Write(beginStreamMagic, 16)
 	w.bw.Write(version, 8)
-	w.bw.Write(uint64('0'+w.blockSize/baseBlockSize), 8)
+	w.bw.Write(uint64('0'+w.level), 8)
 
 	return w.bw.Err()
 }
@@ -133,4 +156,36 @@ func (w *Writer) writeFooter() error {
 	w.bw.Write(uint64(w.checksum), 32)
 
 	return w.bw.Err()
+}
+
+func (w *Writer) write(data []byte) (int, error) {
+	n, err := w.block.Write(data)
+	if !errors.Is(err, block.ErrLimitReached) {
+		return n, err
+	}
+
+	err = w.writeBlock()
+	if err != nil {
+		return n, err
+	}
+
+	// If there's left over data write it recursively to new blocks.
+	if n != len(data) {
+		var nn int
+		nn, err = w.write(data[n:])
+		n += nn
+	}
+
+	return n, err
+}
+
+func (w *Writer) writeBlock() error {
+	err := w.block.Close()
+	if err != nil {
+		return err
+	}
+
+	w.checksum = crc32.Combine(w.checksum, w.block.Checksum)
+	w.block.Reset(w.bw)
+	return nil
 }
